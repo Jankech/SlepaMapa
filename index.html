@@ -32,13 +32,15 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <div class="label">Řeka k nalezení</div>
  <div class="label">Řeka k procvičení</div>
  <div id="target"></div>
+ <button id="show" class="secondary">Ukázat hledanou řeku</button>
  <button id="next">Další náhodná řeka</button>
- <div class="label">Seznam řek</div>
- <div id="riverList" aria-live="polite"></div>
+ <button id="back" class="secondary">Vrátit se k předchozí</button>
  <div class="stats"><div class="stat"><strong id="score">0</strong>Správně</div><div class="stat"><strong id="attempts">0</strong>Pokusy</div></div>
  <div id="answerArea"></div>
  <div id="feedback" role="status">Načítám mapu a říční data…</div>
  <button id="reset" class="secondary">Vynulovat skóre</button>
+ <div class="label">Seznam řek</div>
+ <div id="riverList" aria-live="polite"></div>
  <p class="hint" id="instructions">Vyber řeku a klikni na její modrou linii. Mapu můžeš přiblížit.</p>
  <div id="status" class="status">Připravuji mapu…</div>
  <div class="attribution">Mapový podklad: © SmartMaps · Řeky: © ISVS Voda / CEVL</div>
@@ -49,7 +51,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 (()=> {
  const apiKey=decodeURIComponent('Nks9q7VYoJQux5c%2B2X6ZYxVhZTllaEZsBVa2B5hPTVd1xqJ6t7WBNO%2BoDJp9zo1w');
  const rivers=[[11,'Vltava'],[12,'Labe'],[13,'Morava'],[14,'Ohře'],[15,'Sázava'],[16,'Dyje'],[17,'Jihlava'],[18,'Svratka'],[19,'Jizera'],[20,'Lužnice'],[21,'Berounka'],[22,'Odra'],[23,'Otava'],[24,'Opava'],[25,'Radbuza'],[26,'Chrudimka'],[27,'Úhlava'],[28,'Želivka'],[29,'Mže'],[30,'Tichá Orlice'],[31,'Střela'],[32,'Ploučnice'],[33,'Moravice'],[34,'Oslava'],[35,'Svitava'],[36,'Úslava'],[37,'Divoká Orlice'],[38,'Blanice'],[39,'Malše'],[40,'Doubrava']];
- const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null;let resultLabels=[];
+ const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null;let resultLabels=[],resultFeatures=[],history=[],historyIndex=-1;
  const mapEl=$('map');let riverState={};
  const setStatus=t=>$('status').textContent=t;
  const stats=()=>{$('score').textContent=score;$('attempts').textContent=attempts};
@@ -57,18 +59,34 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(!map)return;
   map.fitBounds([[12.0,48.4],[18.9,51.2]],{padding:35,duration:650});
  }
+ function setTarget(name,addHistory=true){
+  target=name;answered=false;
+  if(addHistory){
+   history=history.slice(0,historyIndex+1);
+   history.push(name);historyIndex=history.length-1;
+  }
+  renderTask();
+  $('feedback').textContent='Najdi řeku: '+target+'.';
+  showFullMap();
+ }
  function randomTarget(){
   const remaining=rivers.filter(([,name])=>riverState[name]!=='done');
   if(!remaining.length){
    target=null;answered=true;renderTask();
    $('feedback').textContent='Výborně! Všech 30 řek máš správně označených.';
-   
    showFullMap();return;
   }
-  target=remaining[Math.floor(Math.random()*remaining.length)][1];
-  answered=false;renderTask();
-  $('feedback').textContent='Najdi řeku: '+target+'.';
-  
+  const choices=remaining.filter(([,n])=>n!==target);
+  const chosen=(choices.length?choices:remaining)[Math.floor(Math.random()*(choices.length?choices:remaining).length)][1];
+  setTarget(chosen,true);
+ }
+ function goBack(){
+  if(historyIndex<=0)return;
+  historyIndex--;
+  target=history[historyIndex];
+  answered=!!riverState[target]&&riverState[target]!=='wrong';
+  renderTask();
+  $('feedback').textContent='Vráceno k otázce: '+target+'.';
   showFullMap();
  }
  function renderTask(){
@@ -83,9 +101,9 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   rivers.forEach(([num,name])=>{
    const item=document.createElement('div');
    const state=riverState[name]||'';
-   item.className='river-item'+(state==='done'?' done':state==='wrong'?' wrong':'');
+   item.className='river-item'+(state==='done'?' done':state==='wrong'?' wrong':state==='shown'?' wrong':'');
    item.innerHTML='<span class="num">'+num+'</span><span></span>';
-   item.lastElementChild.textContent=name;
+   item.lastElementChild.textContent=name+(state==='shown'?' – zobrazeno':'');
    $('riverList').appendChild(item);
   });
  }
@@ -95,24 +113,42 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   answered=true;attempts++;
   if(ok){score++;riverState[target]='done';}
   else{riverState[name]='wrong';}
-  // Keep a permanent map label for every answered river.
+  // Store every answered river independently so later answers never erase earlier highlights.
   const feature=fc?.features.find(f=>f.properties.name===name);
   if(feature){
+   resultFeatures=resultFeatures.filter(f=>f.properties.name!==name);
+   resultFeatures.push({...feature,properties:{...feature.properties,color:ok?'#16833b':'#d93025'}});
    const lines=feature.geometry.type==='MultiLineString'?feature.geometry.coordinates:[feature.geometry.coordinates];
    const longest=lines.reduce((a,b)=>b.length>a.length?b:a,[]);
    if(longest.length){
     const mid=longest[Math.floor(longest.length/2)];
     resultLabels=resultLabels.filter(f=>f.properties.name!==name);
     resultLabels.push({type:'Feature',properties:{name,color:ok?'#16833b':'#d93025'},geometry:{type:'Point',coordinates:mid}});
-    if(map?.getSource('river-result-labels'))map.getSource('river-result-labels').setData({type:'FeatureCollection',features:resultLabels});
    }
-  }
-  if(map?.getLayer('river-result-line')){
-   map.setFilter('river-result-line',['==',['get','name'],name]);
-   map.setPaintProperty('river-result-line','line-color',ok?'#16833b':'#d93025');
+   if(map?.getSource('river-result-lines'))map.getSource('river-result-lines').setData({type:'FeatureCollection',features:resultFeatures});
+   if(map?.getSource('river-result-labels'))map.getSource('river-result-labels').setData({type:'FeatureCollection',features:resultLabels});
   }
   stats();renderRiverList();
   $('feedback').textContent=ok?'Správně! '+name+'. Řeka je označena zeleně.':'Nesprávně. Klikl jsi na '+name+'. Správná odpověď: '+target+'. Vybraná řeka je označena červeně.';
+ }
+ function revealTarget(){
+  if(!target)return;
+  const feature=fc?.features.find(f=>f.properties.name===target);
+  if(!feature)return;
+  riverState[target]='shown';
+  resultFeatures=resultFeatures.filter(f=>f.properties.name!==target);
+  resultFeatures.push({...feature,properties:{...feature.properties,color:'#d28a00'}});
+  const lines=feature.geometry.type==='MultiLineString'?feature.geometry.coordinates:[feature.geometry.coordinates];
+  const longest=lines.reduce((a,b)=>b.length>a.length?b:a,[]);
+  if(longest.length){
+   const mid=longest[Math.floor(longest.length/2)];
+   resultLabels=resultLabels.filter(f=>f.properties.name!==target);
+   resultLabels.push({type:'Feature',properties:{name:target,color:'#d28a00'},geometry:{type:'Point',coordinates:mid}});
+  }
+  map.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:resultFeatures});
+  map.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:resultLabels});
+  answered=true;renderRiverList();
+  $('feedback').textContent='Zobrazená řeka: '+target+'. Je označena oranžově. Můžeš pokračovat na další nebo se k ní vrátit.';
  }
  function onRiver(name){
   if(!name)return;
@@ -143,7 +179,9 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   return bestDistance<=tolerance?best:null;
  }
  $('next').addEventListener('click',randomTarget);
- $('reset').addEventListener('click',()=>{score=0;attempts=0;riverState={};stats();renderRiverList();randomTarget()});
+ $('show').addEventListener('click',revealTarget);
+ $('back').addEventListener('click',goBack);
+ $('reset').addEventListener('click',()=>{score=0;attempts=0;riverState={};resultLabels=[];resultFeatures=[];history=[];historyIndex=-1;map?.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:[]});map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:[]});stats();renderRiverList();randomTarget()});
  try{
   map=new smartmapsgl.Map({apiKey,container:'map',center:{lat:49.8,lng:15.5},zoom:6.6,style:smartmapsgl.MapStyle.LIGHT});
   map.addControl(new smartmapsgl.NavigationControl(),'top-right');
@@ -179,7 +217,8 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
     map.addSource('rivers',{type:'geojson',data:fc});
     map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],5,4,8,6,12,8],'line-opacity':1}});
     map.addLayer({id:'rivers-line',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#00a8e8','line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.2,12,3],'line-opacity':1}});
-    map.addLayer({id:'river-result-line',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#16833b','line-width':['interpolate',['linear'],['zoom'],5,3,10,4,13,5],'line-opacity':1},filter:['==',['get','name'],'']});
+    map.addSource('river-result-lines',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'river-result-line',type:'line',source:'river-result-lines',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,3,10,4,13,5],'line-opacity':1}});
     map.addSource('river-result-labels',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'river-result-labels-layer',type:'symbol',source:'river-result-labels',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
     // Clicks are resolved against the broad, visibly shaded corridor, not the thin river stroke.
