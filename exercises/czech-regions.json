@@ -1,0 +1,35 @@
+{
+  "id": "czech-regions",
+  "appTitle": "Slepá mapa ČR – kraje",
+  "subtitle": "Procvič si všech 14 krajů České republiky.",
+  "description": "14 krajů České republiky – pojmenování na slepé mapě.",
+  "region": "Česká republika",
+  "itemCount": 14,
+  "geometryType": "polygon",
+  "mapBounds": [[12.0, 48.4], [18.9, 51.2]],
+  "dataSource": {
+    "url": "https://gis.nature.cz/arcgis/rest/services/Aplikace/SpravCleneni/MapServer/0/query",
+    "nameField": "NAZEV_NUTS",
+    "idField": "KOD_NUTS3",
+    "params": {
+      "where": "1=1",
+      "outFields": "KOD_NUTS3,NAZEV_NUTS"
+    }
+  },
+  "items": [
+    {"number": 1, "name": "Hlavní město Praha"},
+    {"number": 2, "name": "Středočeský kraj"},
+    {"number": 3, "name": "Jihočeský kraj"},
+    {"number": 4, "name": "Plzeňský kraj"},
+    {"number": 5, "name": "Karlovarský kraj"},
+    {"number": 6, "name": "Ústecký kraj"},
+    {"number": 7, "name": "Liberecký kraj"},
+    {"number": 8, "name": "Královéhradecký kraj"},
+    {"number": 9, "name": "Pardubický kraj"},
+    {"number": 10, "name": "Kraj Vysočina"},
+    {"number": 11, "name": "Jihomoravský kraj"},
+    {"number": 12, "name": "Olomoucký kraj"},
+    {"number": 13, "name": "Zlínský kraj"},
+    {"number": 14, "name": "Moravskoslezský kraj"}
+  ]
+}
