@@ -70,6 +70,24 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 .admin-exercise p{margin:3px 0;color:#5b6875}
 .hint,.status,.attribution{font-size:10px;margin-top:6px}
 }
+body.identify-keyboard #exercisePanel>.label,
+body.identify-keyboard #target,
+body.identify-keyboard .control-buttons,
+body.identify-keyboard .stats,
+body.identify-keyboard #reset,
+body.identify-keyboard #riverListPanel,
+body.identify-keyboard #instructions,
+body.identify-keyboard #status,
+body.identify-keyboard .admin-footer,
+body.identify-keyboard #adminPanel,
+body.identify-keyboard .attribution{display:none!important}
+body.identify-keyboard aside{height:auto;max-height:150px;min-height:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));overflow-y:auto}
+body.identify-keyboard #answerArea{margin:0}
+body.identify-keyboard #answerArea>label{display:none!important}
+body.identify-keyboard #answerRow input{font-size:16px;min-height:42px}
+body.identify-keyboard #answerRow button{min-height:42px}
+body.identify-keyboard #answerArea>#hintName{width:auto;margin-top:5px;padding:6px 12px;font-size:12px}
+body.identify-keyboard #feedback{margin-top:5px;min-height:0}
 @media(max-width:390px){
  aside{height:45dvh;padding-left:9px;padding-right:9px}
  .control-buttons button{font-size:12px}
@@ -423,6 +441,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
    $('submitName').addEventListener('click',submitIdentify);
    $('hintName').addEventListener('click',showNameHint);
    $('nameAnswer').addEventListener('keydown',e=>{if(e.key==='Enter')submitIdentify();});
+   if(window.matchMedia('(max-width:760px)').matches){$('nameAnswer').addEventListener('focus',()=>document.body.classList.add('identify-keyboard'));$('nameAnswer').addEventListener('blur',()=>document.body.classList.remove('identify-keyboard'));}
    $('nameAnswer').focus();
    $('feedback').textContent='Vybral/a jsi položku. Napiš její název.';
    return;
@@ -462,7 +481,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(ok){
    score++;riverState[correct]='done';
    if(feature){resultFeatures=resultFeatures.filter(f=>canonicalName(f.properties.name)!==correct);resultFeatures.push({...feature,properties:{...feature.properties,color:'#16833b'}});resultLabels=resultLabels.filter(f=>canonicalName(f.properties.name)!==correct);}
-   selectedOnMap=null;hintLevel=0;clearTemporary();stats();renderRiverList();updateResultLayers();renderTask();$('feedback').textContent='Správně! Položka je označena zeleně. Klikni na další položku.';
+   document.body.classList.remove('identify-keyboard');selectedOnMap=null;hintLevel=0;clearTemporary();stats();renderRiverList();updateResultLayers();renderTask();$('feedback').textContent='Správně! Položka je označena zeleně. Klikni na další položku.';
   }else{
    errors++;stats();
    if(feature){tempFeatures=[{...feature,properties:{...feature.properties,color:'#d97706'}}];tempLabels=[];updateResultLayers();}
