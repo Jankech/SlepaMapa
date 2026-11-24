@@ -203,11 +203,11 @@
     },
     {
       "url": "https://ags.cuzk.gov.cz/arcgis/rest/services/ZABAGED_POLOHOPIS/MapServer/132/query",
-      "nameField": "JMENO",
+      "nameField": "jmeno",
       "idField": "OBJECTID",
       "params": {
-        "where": "JMENO LIKE '%Černé jezero%' OR JMENO LIKE '%Lipno%' OR JMENO LIKE '%Slapy%' OR JMENO LIKE '%Orlík%' OR JMENO LIKE '%Seč%'",
-        "outFields": "OBJECTID,JMENO,FID_ZBG,STOJVODA,TYP_VP_K,TYP_VP_P"
+        "where": "jmeno LIKE '%Černé jezero%' OR jmeno LIKE '%Lipno%' OR jmeno LIKE '%Slapy%' OR jmeno LIKE '%Orlík%' OR jmeno LIKE '%Seč%'",
+        "outFields": "OBJECTID,jmeno,fid_zbg,stojvoda,typ_vp_k,typ_vp_p"
       }
     }
   ],
