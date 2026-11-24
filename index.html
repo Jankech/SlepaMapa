@@ -276,10 +276,19 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   map.fitBounds(config.mapBounds||[[12.0,48.4],[18.9,51.2]],{padding:35});
   randomTarget();
  }
+ function applyNameVisibility(){
+  if(!map)return;
+  const visibility=$('showNames')?.checked?'visible':'none';
+  ['river-result-labels-layer','river-temp-label-layer'].forEach(id=>{
+   if(map.getLayer(id))try{map.setLayoutProperty(id,'visibility',visibility);}catch(e){}
+  });
+ }
  function applyBaseMapSettings(config){
   if(!map||!map.isStyleLoaded?.())return;
   const hideLabels=!!config?.baseMap?.hideLabels,hideWater=!!config?.baseMap?.hideWater;
+  const ownLabelLayers=new Set(['river-result-labels-layer','river-temp-label-layer']);
   for(const layer of map.getStyle().layers||[]){
+   if(ownLabelLayers.has(layer.id))continue;
    const sourceLayer=(layer['source-layer']||'').toLowerCase();
    const layerId=(layer.id||'').toLowerCase();
    const isWater=['water_lines','water_polygons','water_label'].includes(sourceLayer)||
@@ -291,6 +300,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
     if(current!==wanted)map.setLayoutProperty(layer.id,'visibility',wanted);
    }catch(e){}
   }
+  applyNameVisibility();
  }
  function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
  function normalizedName(s){return normalized(s).replace(/kraj/g,'');}
@@ -299,6 +309,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:resultLabels});
   map?.getSource('river-temp-line')?.setData({type:'FeatureCollection',features:tempFeatures});
   map?.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:tempLabels});
+  applyNameVisibility();
  }
  function makeLabel(feature,color){
   if(feature.geometry.type==='Polygon'||feature.geometry.type==='MultiPolygon'){
@@ -411,8 +422,15 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   }
  }
  // Pixel-based hit testing: generous tolerance, independent of thin rendered map strokes.
- function nearestNameAtPixel(point,tolerance=36){
+ function nearestNameAtPixel(point,tolerance=11){
   if(!fc||!map)return null;
+  // Prefer the actual rendered exercise feature under the pointer. This avoids
+  // selecting a different nearby river merely because it is within a large radius.
+  try{
+   const rendered=map.queryRenderedFeatures(point,{layers:['rivers-line','rivers-fill']})||[];
+   const hit=rendered.find(feature=>feature.properties?.name);
+   if(hit)return hit.properties.name;
+  }catch(e){}
   let best=null,bestDistance=Infinity;
   for(const f of fc.features){
    if(f.geometry.type==='Polygon'||f.geometry.type==='MultiPolygon'){
@@ -452,10 +470,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  $('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
  $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;hintLevel=0;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další položku.';}else randomTarget();});
  $('modeSelect').addEventListener('change',e=>{mode=e.target.value;selectedOnMap=null;clearTemporary();answered=false;renderTask();$('feedback').textContent=mode==='identify'?'Klikni na řeku a napiš její název.':'Najdi řeku uvedenou nahoře.';if(mode==='find'&&!target)randomTarget();});
- $('showNames').addEventListener('change',e=>{
-  const visibility=e.target.checked?'visible':'none';
-  ['river-result-labels-layer','river-temp-label-layer'].forEach(id=>{if(map?.getLayer(id))map.setLayoutProperty(id,'visibility',visibility);});
- });
+ $('showNames').addEventListener('change',applyNameVisibility);
  $('show').addEventListener('click',revealTarget);
  $('back').addEventListener('click',goBack);
  window.addEventListener('resize',()=>{if(map)requestAnimationFrame(()=>map.resize());});
