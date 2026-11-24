@@ -6,6 +6,13 @@
       "description": "30 řek podle pracovního listu, položky 11–40.",
       "region": "Česká republika",
       "itemCount": 30
+    },
+    {
+      "title": "Česká republika – kraje",
+      "file": "czech-regions.json",
+      "description": "14 krajů České republiky – procvičování na slepé mapě.",
+      "region": "Česká republika",
+      "itemCount": 14
     }
   ]
 }
