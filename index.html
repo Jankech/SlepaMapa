@@ -108,7 +108,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <div class="admin-footer"><button id="adminLink" class="text-button" type="button">Přehled cvičení</button></div>
  <section id="adminPanel" hidden aria-live="polite"><div class="admin-head"><strong>Přehled cvičení</strong><button id="adminClose" class="text-button" type="button">Zavřít</button></div><div id="adminContent"></div></section>
  <div class="attribution">Mapový podklad: © SmartMaps · Data: © ISVS Voda / CEVL · ZABAGED</div>
- <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.0</span><time id="footerDateTime"></time></div>
+ <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.1</span><time id="footerDateTime"></time></div>
 </aside>
 <div id="map" aria-label="Interaktivní slepá mapa" hidden></div>
  </section>
@@ -260,19 +260,19 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   randomTarget();
  }
  function applyBaseMapSettings(config){
-  if(!map||!map.getStyle())return;
-  const hideLabels=config?.baseMap?.hideLabels??false;
-  const hideWater=config?.baseMap?.hideWater??false;
-  const layers=map.getStyle().layers||[];
-  for(const layer of layers){
+  if(!map||!map.isStyleLoaded?.())return;
+  const hideLabels=!!config?.baseMap?.hideLabels,hideWater=!!config?.baseMap?.hideWater;
+  for(const layer of map.getStyle().layers||[]){
    const sourceLayer=(layer['source-layer']||'').toLowerCase();
    const layerId=(layer.id||'').toLowerCase();
-   const isWater=sourceLayer.startsWith('water_')||/water|waterway|river|canal|stream/.test(layerId);
-   if((hideLabels&&layer.type==='symbol')||(hideWater&&isWater)){
-    try{map.setLayoutProperty(layer.id,'visibility','none');}catch(e){}
-   }else if(layer.type==='symbol'||isWater){
-    try{map.setLayoutProperty(layer.id,'visibility','visible');}catch(e){}
-   }
+   const isWater=['water_lines','water_polygons','water_label'].includes(sourceLayer)||
+     /(^|[_-])(water|waterway|river|canal|stream)([_-]|$)/.test(layerId);
+   const hide=(hideLabels&&layer.type==='symbol')||(hideWater&&isWater);
+   try{
+    const current=map.getLayoutProperty(layer.id,'visibility')||'visible';
+    const wanted=hide?'none':'visible';
+    if(current!==wanted)map.setLayoutProperty(layer.id,'visibility',wanted);
+   }catch(e){}
   }
  }
  function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
@@ -466,6 +466,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
       map.on('click',e=>{const name=nearestNameAtPixel(e.point,40);if(name){onRiver(name);return;}$('feedback').textContent='Klikni na plochu položky nebo blízko její linie.';});
      }catch(e){setStatus('Chyba mapových dat: '+e.message);$('feedback').textContent='Nepodařilo se načíst mapová data: '+e.message;}
     });map.on('error',e=>{if(e?.error)setStatus('Chyba mapy: '+e.error.message)});
+    map.on('styledata',()=>{if(exercise)applyBaseMapSettings(exercise);});
    }else{await loadExercise(file);}
    $('feedback').textContent=mode==='identify'?'Klikni na položku na mapě. Pod mapou se zobrazí pole pro zadání jejího názvu.':'Najdi položku uvedenou nahoře a klikni na ni.';
   }catch(e){$('setupStatus').textContent='Chyba: '+e.message;}
