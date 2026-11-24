@@ -135,7 +135,29 @@
     },
     {
       "number": 38,
-      "name": "Blanice"
+      "name": "Blanice (Otava)",
+      "aliases": [
+        "Blanice"
+      ],
+      "matchBounds": [
+        13.7,
+        48.8,
+        14.45,
+        49.5
+      ]
+    },
+    {
+      "number": "38b",
+      "name": "Blanice (Sázava)",
+      "aliases": [
+        "Blanice"
+      ],
+      "matchBounds": [
+        14.45,
+        49.5,
+        15.4,
+        50
+      ]
     },
     {
       "number": 39,
@@ -206,8 +228,8 @@
       "nameField": "NAZEV",
       "idField": "OBJECTID",
       "params": {
-        "where": "NAZEV LIKE '%Černé jezero%' OR NAZEV LIKE '%Lipno%' OR NAZEV LIKE '%Slapy%' OR NAZEV LIKE '%Orlík%' OR NAZEV LIKE '%Seč%'",
-        "outFields": "OBJECTID,NAZEV,TYP"
+        "where": "(NAZEV LIKE '%Černé jezero%' OR NAZEV_ASCII LIKE '%Cerne jezero%' OR NAZEV LIKE '%Lipno%' OR NAZEV_ASCII LIKE '%Lipno%' OR NAZEV LIKE '%Slapy%' OR NAZEV_ASCII LIKE '%Slapy%' OR NAZEV LIKE '%Orlík%' OR NAZEV_ASCII LIKE '%Orlik%' OR NAZEV LIKE '%Seč%' OR NAZEV_ASCII LIKE '%Sec%' OR NAZEV LIKE '%Sečská%')",
+        "outFields": "OBJECTID,NAZEV,NAZEV_ASCII,TYP"
       }
     }
   ],
