@@ -138,7 +138,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   const remaining=rivers.filter(([,name])=>riverState[name]!=='done');
   if(!remaining.length){
    target=null;answered=true;renderTask();
-   $('feedback').textContent='Výborně! Všech 30 řek máš správně označených.';
+   $('feedback').textContent='Výborně! Všechny položky máš správně označené.';
    showFullMap();return;
   }
   const choices=remaining.filter(([,n])=>n!==target);
@@ -163,7 +163,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  }
  function renderRiverList(){
   $('riverList').innerHTML='';
-  $('completedCount').textContent=score+'/30';
+  $('completedCount').textContent=score+'/'+rivers.length;
   rivers.forEach(([num,name])=>{
    const item=document.createElement('div');
    const state=riverState[name]||'';
@@ -246,6 +246,12 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   map?.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:tempLabels});
  }
  function makeLabel(feature,color){
+  if(feature.geometry.type==='Polygon'||feature.geometry.type==='MultiPolygon'){
+   const polygon=feature.geometry.type==='Polygon'?feature.geometry.coordinates:feature.geometry.coordinates[0];
+   const ring=polygon[0];if(!ring?.length)return null;
+   const center=ring.reduce((a,c)=>[a[0]+c[0]/ring.length,a[1]+c[1]/ring.length],[0,0]);
+   return {type:'Feature',properties:{name:feature.properties.name,color},geometry:{type:'Point',coordinates:center}};
+  }
   const lines=feature.geometry.type==='MultiLineString'?feature.geometry.coordinates:[feature.geometry.coordinates];
   const longest=lines.reduce((a,b)=>b.length>a.length?b:a,[]);
   if(!longest.length)return null;
@@ -297,6 +303,21 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(!fc||!map)return null;
   let best=null,bestDistance=Infinity;
   for(const f of fc.features){
+   if(f.geometry.type==='Polygon'||f.geometry.type==='MultiPolygon'){
+    const polygons=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;
+    let inside=false;
+    for(const polygon of polygons){
+     const ring=polygon[0].map(c=>map.project(c));
+     let hit=false;
+     for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+      const a=ring[i],b=ring[j];
+      if(((a.y>point.y)!==(b.y>point.y))&&(point.x<(b.x-a.x)*(point.y-a.y)/(b.y-a.y)+a.x))hit=!hit;
+     }
+     if(hit){inside=true;break;}
+    }
+    if(inside)return f.properties.name;
+    continue;
+   }
    const lines=f.geometry.type==='MultiLineString'?f.geometry.coordinates:[f.geometry.coordinates];
    for(const line of lines){
     let prev=null;
@@ -332,14 +353,21 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
     const features=fc?.features||[];
     const loaded=[...new Set(features.map(f=>f.properties.name))];
     map.addSource('rivers',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
-    map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],5,4,8,6,12,8],'line-opacity':1}});
-    map.addLayer({id:'rivers-line',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#00a8e8','line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.2,12,3],'line-opacity':1}});
+    if(exercise.geometryType==='polygon'){
+     map.addLayer({id:'rivers-fill',type:'fill',source:'rivers',paint:{'fill-color':'#8bd3ee','fill-opacity':0.24}});
+     map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',paint:{'line-color':'#1684c7','line-width':1.4,'line-opacity':0.85}});
+    }else{
+     map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],5,4,8,6,12,8],'line-opacity':1}});
+     map.addLayer({id:'rivers-line',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#00a8e8','line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.2,12,3],'line-opacity':1}});
+    }
     map.addSource('river-result-lines',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'river-result-line',type:'line',source:'river-result-lines',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,3,10,4,13,5],'line-opacity':1}});
+    map.addLayer({id:'river-result-fill',type:'fill',source:'river-result-lines',paint:{'fill-color':['get','color'],'fill-opacity':0.5}});
     map.addSource('river-result-labels',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'river-result-labels-layer',type:'symbol',source:'river-result-labels',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
     map.addSource('river-temp-line',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,3,10,4,13,5]}});
+    map.addLayer({id:'river-temp-fill-layer',type:'fill',source:'river-temp-line',paint:{'fill-color':['get','color'],'fill-opacity':0.5}});
     map.addSource('river-temp-label',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'river-temp-label-layer',type:'symbol',source:'river-temp-label',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
     await initializeExerciseLayer(exercise);
