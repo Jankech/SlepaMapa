@@ -213,7 +213,6 @@
   ],
   "baseMap": {
     "hideLabels": true,
-    "hideWater": true,
-    "blank": true
+    "hideWater": true
   }
 }
