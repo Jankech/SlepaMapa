@@ -210,5 +210,9 @@
         "outFields": "OBJECTID,NAZEV,TYP"
       }
     }
-  ]
+  ],
+  "baseMap": {
+    "hideLabels": true,
+    "hideWater": true
+  }
 }
