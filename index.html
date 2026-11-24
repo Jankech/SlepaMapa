@@ -101,6 +101,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <button id="reset" class="secondary">Vynulovat skóre</button>
  <details id="riverListPanel">
   <summary>Seznam položek – hotovo <span id="completedCount">0/30</span> (zobrazit / skrýt)</summary>
+  <button id="fullPreview" class="secondary" type="button" style="width:100%;margin:7px 0">Plný náhled – zobrazit všechny položky</button>
   <div id="riverList" aria-live="polite"></div>
  </details>
  <p class="hint" id="instructions">Vyber položku a klikni na její mapový tvar. Mapu můžeš přiblížit.</p>
@@ -174,6 +175,14 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   $('next').textContent=mode==='identify'?'Zrušit výběr':'Další náhodná';
   if(mode==='identify')$('target').firstElementChild.textContent=selectedOnMap?'Vybraná položka: '+selectedOnMap:'Klikni na položku na mapě';
   renderRiverList();
+ }
+ function previewAllItems(){
+  if(!fc?.features?.length){$('feedback').textContent='Nejsou načtené žádné položky k zobrazení.';return;}
+  clearTimeout(listPreviewTimer);
+  tempFeatures=fc.features.map(feature=>({...feature,properties:{...feature.properties,color:'#f2c230'}}));
+  tempLabels=fc.features.map(feature=>makeLabel(feature,'#9a6b00')).filter(Boolean);
+  updateResultLayers();
+  $('feedback').textContent='Plný náhled: zobrazeno všech '+new Set(fc.features.map(feature=>feature.properties.name)).size+' položek cvičení.';
  }
  function previewListItem(name){
   const matches=(fc?.features||[]).filter(feature=>feature.properties?.name===name);
@@ -503,6 +512,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  $('adminLink').addEventListener('click',()=>{$('adminPanel').hidden=!$('adminPanel').hidden;});$('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
  $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další položku.';}else randomTarget();});
  $('show').addEventListener('click',revealTarget);$('back').addEventListener('click',goBack);
+ $('fullPreview').addEventListener('click',previewAllItems);
  window.addEventListener('resize',()=>{if(map)requestAnimationFrame(()=>map.resize());});
  $('reset').addEventListener('click',()=>{score=0;attempts=0;errors=0;riverState={};resultLabels=[];resultFeatures=[];tempFeatures=[];tempLabels=[];selectedOnMap=null;history=[];historyIndex=-1;map?.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:[]});map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:[]});clearTemporary();stats();renderRiverList();if(mode==='find')randomTarget();else renderTask();});
  loadRegistry().catch(e=>$('setupStatus').textContent='Chyba: '+e.message);
