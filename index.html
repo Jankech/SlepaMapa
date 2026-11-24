@@ -195,6 +195,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   });
   exercise=await (await fetch('./exercises/'+encodeURIComponent(exerciseRegistry[0].file))).json();
   rivers=exercise.items.map(item=>[item.number??'',item.name]);
+  applyBaseMapSettings(exercise);
   document.title=exercise.appTitle||'Univerzální slepá mapa';
   document.querySelector('header h1').textContent=exercise.appTitle||'Slepá mapa';
   document.querySelector('header p').textContent=exercise.subtitle||exercise.description||'Procvičování na slepé mapě';
@@ -207,6 +208,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   const config=await response.json();
   if(!Array.isArray(config.items)||!config.items.length)throw new Error('Soubor cvičení neobsahuje položky.');
   exercise=config;
+  applyBaseMapSettings(config);
   rivers=config.items.map(item=>[item.number??'',item.name]);
   document.title=config.appTitle||'Univerzální slepá mapa';
   document.querySelector('header h1').textContent=config.appTitle||'Slepá mapa';
@@ -237,6 +239,15 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   setStatus('Načteno '+new Set(features.map(f=>f.properties.name)).size+' z '+rivers.length+' položek.');
   map.fitBounds(config.mapBounds||[[12.0,48.4],[18.9,51.2]],{padding:35});
   randomTarget();
+ }
+ function applyBaseMapSettings(config){
+  if(!map||!map.getStyle())return;
+  const hideLabels=!!config?.baseMap?.hideLabels;
+  const layers=map.getStyle().layers||[];
+  for(const layer of layers){
+   if(layer.type!=='symbol')continue;
+   try{map.setLayoutProperty(layer.id,'visibility',hideLabels?'none':'visible');}catch(e){}
+  }
  }
  function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
  function updateResultLayers(){
