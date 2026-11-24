@@ -6,23 +6,60 @@
 <script src="https://cdn.smartmaps.cloud/packages/smartmaps/smartmaps-gl/v2/umd/smartmaps-gl.min.js"></script>
 <style>
 :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#18212b;background:#f3f6f8}
-*{box-sizing:border-box}body{margin:0}header{padding:14px 18px;background:#173b57;color:white}h1{font-size:20px;margin:0 0 4px}header p{margin:0;font-size:13px;opacity:.9}
-main{display:grid;grid-template-columns:340px 1fr;min-height:calc(100vh - 64px)}aside{padding:16px;background:#fff;border-right:1px solid #dce2e8;overflow:auto}
-#map{height:calc(100vh - 64px);min-height:540px;width:100%}.label{font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.05em;color:#5b6875;margin:15px 0 7px}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{overflow:hidden}header{height:64px;padding:10px 18px;background:#173b57;color:white;position:relative;z-index:20}h1{font-size:20px;margin:0 0 4px}header p{margin:0;font-size:13px;opacity:.9}
+main{display:grid;grid-template-columns:340px minmax(0,1fr);height:calc(100dvh - 64px);min-height:0}aside{padding:14px;background:#fff;border-right:1px solid #dce2e8;overflow-y:auto;min-height:0}
+#map{height:100%;min-height:0;width:100%;min-width:0}.label{font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.05em;color:#5b6875;margin:15px 0 7px}
 select,input,button{width:100%;font:inherit;border-radius:9px;padding:10px 11px;border:1px solid #cbd5df;background:#fff;color:#18212b}
 button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;margin-top:8px}button.secondary{background:#e9eff4;color:#173b57}
 .stats{display:flex;gap:8px;margin:12px 0}.stat{flex:1;padding:9px;border-radius:9px;background:#f0f4f7;font-size:12px;color:#526170}.stat strong{display:block;font-size:21px;color:#173b57}
 #feedback{padding:11px;border-radius:9px;background:#f0f4f7;font-size:14px;line-height:1.45;margin-top:11px;min-height:52px}
 #answerArea{margin-top:10px}#answerRow{display:flex;gap:7px}#answerRow input{min-width:0}#answerRow button{width:auto;white-space:nowrap;margin:0}
 #dragCard{padding:8px 10px;border:1px solid #a8bfd0;border-radius:9px;background:#edf5fa;color:#173b57;font-weight:700;text-align:center;cursor:grab;user-select:none}#dragList{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:240px;overflow:auto;padding:2px}#dragList .drag-item{padding:7px 8px;border:1px solid #a8bfd0;border-radius:8px;background:#f0f7fb;color:#173b57;font-size:12px;font-weight:700;cursor:grab;text-align:center;user-select:none}#dragList .drag-item:active{cursor:grabbing}#mapLegend{display:flex;align-items:center;gap:7px;font-size:12px;color:#526170;margin-top:8px}#mapLegend i{display:inline-block;width:27px;height:9px;border-radius:9px;background:#8bd3ee;border:2px solid #1684c7}
-#riverList{display:grid;gap:5px;margin-top:6px}
+#riverList{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+#riverListPanel{margin-top:12px;border-top:1px solid #e1e7ec;padding-top:9px}
+#riverListPanel summary{cursor:pointer;font-size:13px;font-weight:750;color:#173b57;padding:5px 2px}
+.control-buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.control-buttons button{margin-top:6px}
+#reset{margin-top:6px}
 .river-item{padding:6px 9px;border-radius:7px;background:#f0f4f7;font-size:13px;color:#354454;display:flex;gap:8px;align-items:center}
 .river-item .num{width:23px;color:#718091;font-size:11px}
-.river-item.done{background:#e1f3e6;color:#176534;text-decoration:line-through}
-.river-item.wrong{background:#fbe5e5;color:#a52b2b;text-decoration:line-through}
+.river-item.done{background:#e1f3e6;color:#176534;font-weight:700}
+.river-item.wrong{background:#fbe5e5;color:#a52b2b}
 #dragCard.dragging{opacity:.45}#map.drop-ready{outline:4px solid #2a91c9;outline-offset:-4px}
 .hint,.status,.attribution{font-size:12px;line-height:1.5;color:#647282;margin-top:11px}
-@media(max-width:760px){main{display:flex;flex-direction:column}#map{order:1;height:55vh;min-height:360px}aside{order:2;border:0}}
+@media(max-width:760px){
+ html,body{height:100%;overflow:hidden}
+ header{height:56px;padding:8px 12px}
+ h1{font-size:17px}
+ header p{font-size:11px}
+ main{display:block;position:relative;height:calc(100dvh - 56px);min-height:0}
+ #map{position:absolute;inset:0 0 0 0;width:100%;height:100%;min-height:0}
+ aside{
+  position:absolute;z-index:10;left:0;right:0;bottom:0;
+  height:42dvh;max-height:390px;min-height:245px;
+  padding:9px 12px calc(10px + env(safe-area-inset-bottom));
+  border:0;border-top:2px solid #d5e0e8;border-radius:14px 14px 0 0;
+  box-shadow:0 -5px 18px rgba(20,45,65,.18);
+  overflow-y:auto;overscroll-behavior:contain;
+ }
+ aside>.label:first-child{margin-top:1px}
+ .label{margin:8px 0 4px}
+ #target>div{font-size:16px!important}
+ .control-buttons button{padding:9px 8px;font-size:13px}
+ .stats{margin:7px 0;gap:6px}
+ .stat{padding:5px 7px;font-size:11px}
+ .stat strong{font-size:18px}
+ #feedback{margin-top:6px;padding:7px 9px;min-height:0;font-size:12px}
+ #reset{width:100%;padding:7px;margin-top:5px;font-size:12px}
+ #riverList{grid-template-columns:1fr 1fr}
+ #riverListPanel{margin-top:7px;padding-top:5px}
+ #riverListPanel[open] #riverList{max-height:120px;overflow-y:auto}
+ .hint,.status,.attribution{font-size:10px;margin-top:6px}
+}
+@media(max-width:390px){
+ aside{height:45dvh;padding-left:9px;padding-right:9px}
+ .control-buttons button{font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -32,15 +69,19 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <div class="label">Řeka k nalezení</div>
  <div class="label">Řeka k procvičení</div>
  <div id="target"></div>
- <button id="show" class="secondary">Ukázat hledanou řeku</button>
- <button id="next">Další náhodná řeka</button>
- <button id="back" class="secondary">Vrátit se k předchozí</button>
- <div class="stats"><div class="stat"><strong id="score">0</strong>Správně</div><div class="stat"><strong id="attempts">0</strong>Pokusy</div></div>
+ <div class="control-buttons">
+  <button id="show" class="secondary">Ukázat řeku</button>
+  <button id="next">Další náhodná</button>
+  <button id="back" class="secondary">Předchozí otázka</button>
+ </div>
+ <div class="stats"><div class="stat"><strong id="score">0</strong>Správně</div><div class="stat"><strong id="attempts">0</strong>Pokusy</div><div class="stat"><strong id="errors">0</strong>Chyby</div></div>
  <div id="answerArea"></div>
  <div id="feedback" role="status">Načítám mapu a říční data…</div>
  <button id="reset" class="secondary">Vynulovat skóre</button>
- <div class="label">Seznam řek</div>
- <div id="riverList" aria-live="polite"></div>
+ <details id="riverListPanel">
+  <summary>Seznam řek – hotovo <span id="completedCount">0/30</span> (zobrazit / skrýt)</summary>
+  <div id="riverList" aria-live="polite"></div>
+ </details>
  <p class="hint" id="instructions">Vyber řeku a klikni na její modrou linii. Mapu můžeš přiblížit.</p>
  <div id="status" class="status">Připravuji mapu…</div>
  <div class="attribution">Mapový podklad: © SmartMaps · Řeky: © ISVS Voda / CEVL</div>
@@ -51,10 +92,10 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 (()=> {
  const apiKey=decodeURIComponent('Nks9q7VYoJQux5c%2B2X6ZYxVhZTllaEZsBVa2B5hPTVd1xqJ6t7WBNO%2BoDJp9zo1w');
  const rivers=[[11,'Vltava'],[12,'Labe'],[13,'Morava'],[14,'Ohře'],[15,'Sázava'],[16,'Dyje'],[17,'Jihlava'],[18,'Svratka'],[19,'Jizera'],[20,'Lužnice'],[21,'Berounka'],[22,'Odra'],[23,'Otava'],[24,'Opava'],[25,'Radbuza'],[26,'Chrudimka'],[27,'Úhlava'],[28,'Želivka'],[29,'Mže'],[30,'Tichá Orlice'],[31,'Střela'],[32,'Ploučnice'],[33,'Moravice'],[34,'Oslava'],[35,'Svitava'],[36,'Úslava'],[37,'Divoká Orlice'],[38,'Blanice'],[39,'Malše'],[40,'Doubrava']];
- const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null;let resultLabels=[],resultFeatures=[],history=[],historyIndex=-1;
+ const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null;let resultLabels=[],resultFeatures=[],tempFeatures=[],tempLabels=[],history=[],historyIndex=-1,errors=0;
  const mapEl=$('map');let riverState={};
  const setStatus=t=>$('status').textContent=t;
- const stats=()=>{$('score').textContent=score;$('attempts').textContent=attempts};
+ const stats=()=>{$('score').textContent=score;$('attempts').textContent=attempts;$('errors').textContent=errors};
  function showFullMap(){
   if(!map)return;
   map.fitBounds([[12.0,48.4],[18.9,51.2]],{padding:35,duration:650});
@@ -69,7 +110,13 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   $('feedback').textContent='Najdi řeku: '+target+'.';
   showFullMap();
  }
+ function clearTemporary(){
+  tempFeatures=[];tempLabels=[];
+  map?.getSource('river-temp-line')?.setData({type:'FeatureCollection',features:[]});
+  map?.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:[]});
+ }
  function randomTarget(){
+  clearTemporary();
   const remaining=rivers.filter(([,name])=>riverState[name]!=='done');
   if(!remaining.length){
    target=null;answered=true;renderTask();
@@ -84,7 +131,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(historyIndex<=0)return;
   historyIndex--;
   target=history[historyIndex];
-  answered=!!riverState[target]&&riverState[target]!=='wrong';
+  answered=riverState[target]==='done';clearTemporary();
   renderTask();
   $('feedback').textContent='Vráceno k otázce: '+target+'.';
   showFullMap();
@@ -98,57 +145,65 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  }
  function renderRiverList(){
   $('riverList').innerHTML='';
+  $('completedCount').textContent=score+'/30';
   rivers.forEach(([num,name])=>{
    const item=document.createElement('div');
    const state=riverState[name]||'';
-   item.className='river-item'+(state==='done'?' done':state==='wrong'?' wrong':state==='shown'?' wrong':'');
+   item.className='river-item'+(state==='done'?' done':'');
    item.innerHTML='<span class="num">'+num+'</span><span></span>';
-   item.lastElementChild.textContent=name+(state==='shown'?' – zobrazeno':'');
+   item.lastElementChild.textContent=name+(state==='done'?' ✓':'');
    $('riverList').appendChild(item);
   });
  }
  function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
+ function updateResultLayers(){
+  map?.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:resultFeatures});
+  map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:resultLabels});
+  map?.getSource('river-temp-line')?.setData({type:'FeatureCollection',features:tempFeatures});
+  map?.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:tempLabels});
+ }
+ function makeLabel(feature,color){
+  const lines=feature.geometry.type==='MultiLineString'?feature.geometry.coordinates:[feature.geometry.coordinates];
+  const longest=lines.reduce((a,b)=>b.length>a.length?b:a,[]);
+  if(!longest.length)return null;
+  return {type:'Feature',properties:{name:feature.properties.name,color},geometry:{type:'Point',coordinates:longest[Math.floor(longest.length/2)]}};
+ }
  function record(ok,name){
   if(answered)return;
   answered=true;attempts++;
-  if(ok){score++;riverState[target]='done';}
-  else{riverState[name]='wrong';}
-  // Store every answered river independently so later answers never erase earlier highlights.
   const feature=fc?.features.find(f=>f.properties.name===name);
-  if(feature){
-   resultFeatures=resultFeatures.filter(f=>f.properties.name!==name);
-   resultFeatures.push({...feature,properties:{...feature.properties,color:ok?'#16833b':'#d93025'}});
-   const lines=feature.geometry.type==='MultiLineString'?feature.geometry.coordinates:[feature.geometry.coordinates];
-   const longest=lines.reduce((a,b)=>b.length>a.length?b:a,[]);
-   if(longest.length){
-    const mid=longest[Math.floor(longest.length/2)];
+  if(ok){
+   score++;riverState[target]='done';
+   if(feature){
+    resultFeatures=resultFeatures.filter(f=>f.properties.name!==name);
+    resultFeatures.push({...feature,properties:{...feature.properties,color:'#16833b'}});
     resultLabels=resultLabels.filter(f=>f.properties.name!==name);
-    resultLabels.push({type:'Feature',properties:{name,color:ok?'#16833b':'#d93025'},geometry:{type:'Point',coordinates:mid}});
+    const label=makeLabel(feature,'#16833b');if(label)resultLabels.push(label);
    }
-   if(map?.getSource('river-result-lines'))map.getSource('river-result-lines').setData({type:'FeatureCollection',features:resultFeatures});
-   if(map?.getSource('river-result-labels'))map.getSource('river-result-labels').setData({type:'FeatureCollection',features:resultLabels});
+   clearTemporary();
+  }else{
+   errors++;
+   tempFeatures=feature?[{...feature,properties:{...feature.properties,color:'#d93025'}}]:[];
+   tempLabels=feature?[makeLabel(feature,'#d93025')].filter(Boolean):[];
+   const wanted=fc?.features.find(f=>f.properties.name===target);
+   if(wanted){
+    tempFeatures.push({...wanted,properties:{...wanted.properties,color:'#e0a000'}});
+    const label=makeLabel(wanted,'#e0a000');if(label)tempLabels.push(label);
+   }
   }
-  stats();renderRiverList();
-  $('feedback').textContent=ok?'Správně! '+name+'. Řeka je označena zeleně.':'Nesprávně. Klikl jsi na '+name+'. Správná odpověď: '+target+'. Vybraná řeka je označena červeně.';
+  stats();renderRiverList();updateResultLayers();
+  $('feedback').textContent=ok?'Správně! '+name+'.':'Nesprávně. Červeně je tvoje volba, žlutě hledaná řeka. Klikni na „Další náhodná řeka“ pro pokračování.';
+  if(ok)randomTarget();
  }
  function revealTarget(){
-  if(!target)return;
+  if(!target||answered)return;
   const feature=fc?.features.find(f=>f.properties.name===target);
   if(!feature)return;
-  riverState[target]='shown';
-  resultFeatures=resultFeatures.filter(f=>f.properties.name!==target);
-  resultFeatures.push({...feature,properties:{...feature.properties,color:'#d28a00'}});
-  const lines=feature.geometry.type==='MultiLineString'?feature.geometry.coordinates:[feature.geometry.coordinates];
-  const longest=lines.reduce((a,b)=>b.length>a.length?b:a,[]);
-  if(longest.length){
-   const mid=longest[Math.floor(longest.length/2)];
-   resultLabels=resultLabels.filter(f=>f.properties.name!==target);
-   resultLabels.push({type:'Feature',properties:{name:target,color:'#d28a00'},geometry:{type:'Point',coordinates:mid}});
-  }
-  map.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:resultFeatures});
-  map.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:resultLabels});
-  answered=true;renderRiverList();
-  $('feedback').textContent='Zobrazená řeka: '+target+'. Je označena oranžově. Můžeš pokračovat na další nebo se k ní vrátit.';
+  tempFeatures=[{...feature,properties:{...feature.properties,color:'#e0a000'}}];
+  tempLabels=[makeLabel(feature,'#e0a000')].filter(Boolean);
+  updateResultLayers();
+  answered=true;
+  $('feedback').textContent='Řeka '+target+' je zobrazena žlutě. Při další otázce zvýraznění zmizí; můžeš ji později zkusit znovu.';
  }
  function onRiver(name){
   if(!name)return;
@@ -181,7 +236,8 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  $('next').addEventListener('click',randomTarget);
  $('show').addEventListener('click',revealTarget);
  $('back').addEventListener('click',goBack);
- $('reset').addEventListener('click',()=>{score=0;attempts=0;riverState={};resultLabels=[];resultFeatures=[];history=[];historyIndex=-1;map?.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:[]});map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:[]});stats();renderRiverList();randomTarget()});
+ window.addEventListener('resize',()=>{if(map)requestAnimationFrame(()=>map.resize());});
+ $('reset').addEventListener('click',()=>{score=0;attempts=0;errors=0;riverState={};resultLabels=[];resultFeatures=[];tempFeatures=[];tempLabels=[];history=[];historyIndex=-1;map?.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:[]});map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:[]});clearTemporary();stats();renderRiverList();randomTarget()});
  try{
   map=new smartmapsgl.Map({apiKey,container:'map',center:{lat:49.8,lng:15.5},zoom:6.6,style:smartmapsgl.MapStyle.LIGHT});
   map.addControl(new smartmapsgl.NavigationControl(),'top-right');
@@ -221,6 +277,10 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
     map.addLayer({id:'river-result-line',type:'line',source:'river-result-lines',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,3,10,4,13,5],'line-opacity':1}});
     map.addSource('river-result-labels',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'river-result-labels-layer',type:'symbol',source:'river-result-labels',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
+    map.addSource('river-temp-line',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,3,10,4,13,5]}});
+    map.addSource('river-temp-label',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'river-temp-label-layer',type:'symbol',source:'river-temp-label',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
     // Clicks are resolved against the broad, visibly shaded corridor, not the thin river stroke.
     map.on('click',e=>{const name=nearestNameAtPixel(e.point,40);if(name){onRiver(name);return;}$('feedback').textContent='Klikni blíže k některé řece. Klikací oblast je rozšířená přibližně 40 px kolem její linie.';});
     map.on('mouseenter','rivers-corridor',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','rivers-corridor',()=>map.getCanvas().style.cursor='');
