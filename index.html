@@ -173,7 +173,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   $('instructions').textContent=mode==='identify'?'Klikni na libovolnou položku na mapě. Potom napiš její název.':'Najdi na mapě položku uvedenou nahoře a klikni na ni.';
   $('show').hidden=mode==='identify';
   $('next').textContent=mode==='identify'?'Zrušit výběr':'Další náhodná';
-  if(mode==='identify')$('target').firstElementChild.textContent=selectedOnMap?'Vybraná položka: '+selectedOnMap:'Klikni na položku na mapě';
+  if(mode==='identify')$('target').firstElementChild.textContent=selectedOnMap?'Vybraná položka':'Klikni na položku na mapě';
   renderRiverList();
  }
  function cancelPreview(){
