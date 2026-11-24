@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Slepá mapa ČR – řeky</title>
+<title>Univerzální slepá mapa</title>
 <script src="https://cdn.smartmaps.cloud/packages/smartmaps/smartmaps-gl/v2/umd/smartmaps-gl.min.js"></script>
 <style>
 :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#18212b;background:#f3f6f8}
@@ -26,6 +26,13 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 .river-item.done{background:#e1f3e6;color:#176534;font-weight:700}
 .river-item.wrong{background:#fbe5e5;color:#a52b2b}
 #dragCard.dragging{opacity:.45}#map.drop-ready{outline:4px solid #2a91c9;outline-offset:-4px}
+.admin-footer{margin-top:14px;padding-top:8px;border-top:1px solid #e1e7ec;text-align:right}
+.text-button{width:auto;background:transparent;color:#557087;padding:4px 2px;margin:0;font-size:11px;text-decoration:underline}
+#adminPanel{margin-top:8px;padding:10px;border:1px solid #dce5ec;border-radius:9px;background:#f8fafb;font-size:12px}
+.admin-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.admin-exercise{padding:8px 0;border-top:1px solid #e1e7ec}
+.admin-exercise strong{display:block;color:#173b57}
+.admin-exercise p{margin:3px 0;color:#5b6875}
 .hint,.status,.attribution{font-size:12px;line-height:1.5;color:#647282;margin-top:11px}
 @media(max-width:760px){
  html,body{height:100%;overflow:hidden}
@@ -54,7 +61,14 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  #riverList{grid-template-columns:1fr 1fr}
  #riverListPanel{margin-top:7px;padding-top:5px}
  #riverListPanel[open] #riverList{max-height:120px;overflow-y:auto}
- .hint,.status,.attribution{font-size:10px;margin-top:6px}
+ .admin-footer{margin-top:14px;padding-top:8px;border-top:1px solid #e1e7ec;text-align:right}
+.text-button{width:auto;background:transparent;color:#557087;padding:4px 2px;margin:0;font-size:11px;text-decoration:underline}
+#adminPanel{margin-top:8px;padding:10px;border:1px solid #dce5ec;border-radius:9px;background:#f8fafb;font-size:12px}
+.admin-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.admin-exercise{padding:8px 0;border-top:1px solid #e1e7ec}
+.admin-exercise strong{display:block;color:#173b57}
+.admin-exercise p{margin:3px 0;color:#5b6875}
+.hint,.status,.attribution{font-size:10px;margin-top:6px}
 }
 @media(max-width:390px){
  aside{height:45dvh;padding-left:9px;padding-right:9px}
@@ -66,6 +80,8 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 <header><h1>Slepá mapa ČR – řeky</h1><p>Procvič si 30 řek podle pracovního listu (č. 11–40).</p></header>
 <main>
 <aside>
+ <div class="label">Procvičování</div>
+ <select id="exerciseSelect" aria-label="Vyber cvičení" hidden></select>
  <div class="label">Řeka k nalezení</div>
  <div class="label">Řeka k procvičení</div>
  <div id="target"></div>
@@ -84,6 +100,8 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  </details>
  <p class="hint" id="instructions">Vyber řeku a klikni na její modrou linii. Mapu můžeš přiblížit.</p>
  <div id="status" class="status">Připravuji mapu…</div>
+ <div class="admin-footer"><button id="adminLink" class="text-button" type="button">Přehled cvičení</button></div>
+ <section id="adminPanel" hidden aria-live="polite"><div class="admin-head"><strong>Přehled cvičení</strong><button id="adminClose" class="text-button" type="button">Zavřít</button></div><div id="adminContent"></div></section>
  <div class="attribution">Mapový podklad: © SmartMaps · Řeky: © ISVS Voda / CEVL</div>
 </aside>
 <div id="map" aria-label="Interaktivní mapa České republiky"></div>
@@ -91,7 +109,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 <script>
 (()=> {
  const apiKey=decodeURIComponent('Nks9q7VYoJQux5c%2B2X6ZYxVhZTllaEZsBVa2B5hPTVd1xqJ6t7WBNO%2BoDJp9zo1w');
- const rivers=[[11,'Vltava'],[12,'Labe'],[13,'Morava'],[14,'Ohře'],[15,'Sázava'],[16,'Dyje'],[17,'Jihlava'],[18,'Svratka'],[19,'Jizera'],[20,'Lužnice'],[21,'Berounka'],[22,'Odra'],[23,'Otava'],[24,'Opava'],[25,'Radbuza'],[26,'Chrudimka'],[27,'Úhlava'],[28,'Želivka'],[29,'Mže'],[30,'Tichá Orlice'],[31,'Střela'],[32,'Ploučnice'],[33,'Moravice'],[34,'Oslava'],[35,'Svitava'],[36,'Úslava'],[37,'Divoká Orlice'],[38,'Blanice'],[39,'Malše'],[40,'Doubrava']];
+ let rivers=[];let exercise=null;let exerciseRegistry=[];
  const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null;let resultLabels=[],resultFeatures=[],tempFeatures=[],tempLabels=[],history=[],historyIndex=-1,errors=0;
  const mapEl=$('map');let riverState={};
  const setStatus=t=>$('status').textContent=t;
@@ -154,6 +172,63 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
    item.lastElementChild.textContent=name+(state==='done'?' ✓':'');
    $('riverList').appendChild(item);
   });
+ }
+ async function loadRegistry(){
+  const response=await fetch('./exercises/index.json',{cache:'no-store'});
+  if(!response.ok)throw new Error('Nelze načíst seznam cvičení (HTTP '+response.status+').');
+  const registry=await response.json();
+  exerciseRegistry=registry.exercises||[];
+  if(!exerciseRegistry.length)throw new Error('V exercises/index.json není žádné cvičení.');
+  const select=$('exerciseSelect');
+  select.innerHTML='';
+  exerciseRegistry.forEach(item=>{
+   const option=document.createElement('option');option.value=item.file;option.textContent=item.title;select.appendChild(option);
+  });
+  select.hidden=exerciseRegistry.length<2;
+  $('adminContent').innerHTML='';
+  exerciseRegistry.forEach(item=>{
+   const row=document.createElement('div');row.className='admin-exercise';
+   const title=document.createElement('strong');title.textContent=item.title;row.appendChild(title);
+   const desc=document.createElement('p');desc.textContent=item.description||'Bez popisu';row.appendChild(desc);
+   const meta=document.createElement('p');meta.textContent=(item.region||'')+(item.itemCount?' · '+item.itemCount+' položek':'');row.appendChild(meta);
+   $('adminContent').appendChild(row);
+  });
+  exercise=await (await fetch('./exercises/'+encodeURIComponent(exerciseRegistry[0].file))).json();
+  rivers=exercise.items.map(item=>[item.number??'',item.name]);
+  select.addEventListener('change',()=>loadExercise(select.value).catch(e=>setStatus('Chyba cvičení: '+e.message)));
+ }
+ async function loadExercise(file){
+  setStatus('Načítám cvičení…');
+  const response=await fetch('./exercises/'+encodeURIComponent(file),{cache:'no-store'});
+  if(!response.ok)throw new Error('Nelze načíst '+file+' (HTTP '+response.status+').');
+  const config=await response.json();
+  if(!Array.isArray(config.items)||!config.items.length)throw new Error('Soubor cvičení neobsahuje položky.');
+  exercise=config;
+  rivers=config.items.map(item=>[item.number??'',item.name]);
+  $('target').textContent='Načítám…';
+  document.querySelector('header h1').textContent=config.appTitle||'Slepá mapa';
+  document.querySelector('header p').textContent=config.subtitle||config.description||'Procvičování na slepé mapě';
+  score=0;attempts=0;errors=0;target=null;answered=false;riverState={};resultFeatures=[];resultLabels=[];history=[];historyIndex=-1;
+  stats();renderRiverList();
+  if(map?.getSource('rivers'))await initializeExerciseLayer(config);
+ }
+ async function initializeExerciseLayer(config){
+  const query=config.dataSource;
+  if(!query?.url)throw new Error('Cvičení nemá nastavený zdroj mapových dat.');
+  const params=new URLSearchParams({...query.params, f:'geojson',outSR:'4326',returnGeometry:'true'});
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),45000);
+  let data;
+  try{const response=await fetch(query.url+'?'+params.toString(),{signal:controller.signal,mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status);data=await response.json();}
+  finally{clearTimeout(timer);}
+  if(data.error)throw new Error(data.error.message||'Chyba datové služby.');
+  const wanted=new Set(rivers.map(x=>normalized(x[1])));
+  const features=(data.features||[]).filter(f=>f.geometry&&f.properties?.[config.dataSource.nameField]&&wanted.has(normalized(f.properties[config.dataSource.nameField]))).map(f=>({type:'Feature',properties:{name:f.properties[config.dataSource.nameField],item_id:f.properties[config.dataSource.idField]},geometry:f.geometry}));
+  if(!features.length)throw new Error('Datový zdroj nevrátil žádnou položku cvičení.');
+  fc={type:'FeatureCollection',features};
+  map.getSource('rivers').setData(fc);
+  ['river-result-lines','river-result-labels','river-temp-line','river-temp-label'].forEach(id=>map.getSource(id)?.setData({type:'FeatureCollection',features:[]}));
+  setStatus('Načteno '+new Set(features.map(f=>f.properties.name)).size+' z '+rivers.length+' položek.');
+  randomTarget();
  }
  function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
  function updateResultLayers(){
@@ -233,6 +308,8 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   }
   return bestDistance<=tolerance?best:null;
  }
+ $('adminLink').addEventListener('click',()=>{$('adminPanel').hidden=!$('adminPanel').hidden;});
+ $('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
  $('next').addEventListener('click',randomTarget);
  $('show').addEventListener('click',revealTarget);
  $('back').addEventListener('click',goBack);
@@ -243,34 +320,10 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   map.addControl(new smartmapsgl.NavigationControl(),'top-right');
   map.on('load',async()=>{
    try{
-    const names=rivers.map(x=>x[1]);
-    // Nationwide Central Register of Water Lines (CEVL), maintained for ISVS Voda.
-    setStatus('Načítám celostátní říční síť CEVL…');
-    const where="TYP_CEVT = 1 AND ("+names.map(n=>"NAZ_TOK LIKE '%"+n.replace(/'/g,"''")+"%'").join(' OR ')+")";
-    const params=new URLSearchParams({
-      where,
-      outFields:'NAZ_TOK,TOK_ID,TYP_CEVT',
-      returnGeometry:'true',
-      outSR:'4326',
-      f:'geojson',
-      returnExceededLimitFeatures:'true'
-    });
-    const endpoint='https://agrigis.gov.cz/public/rest/services/ISVS_Voda/osy_vodnich_linii/FeatureServer/0/query?'+params.toString();
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),45000);
-    let data;
-    try{
-      const response=await fetch(endpoint,{signal:controller.signal,mode:'cors'});
-      if(!response.ok)throw new Error('CEVL HTTP '+response.status);
-      data=await response.json();
-    }finally{clearTimeout(timer);}
-    if(data.error)throw new Error('CEVL: '+(data.error.message||JSON.stringify(data.error)));
-    const wanted=new Set(names.map(normalized));
-    const features=(data.features||[]).filter(f=>f.geometry&&f.properties?.NAZ_TOK&&wanted.has(normalized(f.properties.NAZ_TOK))).map(f=>({type:'Feature',properties:{name:f.properties.NAZ_TOK,river_id:f.properties.TOK_ID},geometry:f.geometry}));
-    fc={type:'FeatureCollection',features};
+    await loadRegistry();
+    const features=fc?.features||[];
     const loaded=[...new Set(features.map(f=>f.properties.name))];
-    if(!features.length)throw Error('CEVL nevrátil žádnou z 30 požadovaných řek. Server vrátil '+(data.features||[]).length+' objektů.');
-    map.addSource('rivers',{type:'geojson',data:fc});
+    map.addSource('rivers',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],5,4,8,6,12,8],'line-opacity':1}});
     map.addLayer({id:'rivers-line',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#00a8e8','line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.2,12,3],'line-opacity':1}});
     map.addSource('river-result-lines',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
@@ -281,11 +334,12 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
     map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,3,10,4,13,5]}});
     map.addSource('river-temp-label',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'river-temp-label-layer',type:'symbol',source:'river-temp-label',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
+    await initializeExerciseLayer(exercise);
     // Clicks are resolved against the broad, visibly shaded corridor, not the thin river stroke.
     map.on('click',e=>{const name=nearestNameAtPixel(e.point,40);if(name){onRiver(name);return;}$('feedback').textContent='Klikni blíže k některé řece. Klikací oblast je rozšířená přibližně 40 px kolem její linie.';});
     map.on('mouseenter','rivers-corridor',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','rivers-corridor',()=>map.getCanvas().style.cursor='');
-    setStatus('Načteno '+loaded.length+' z 30 řek z celostátní CEVL ('+features.length+' úseků): '+loaded.join(', ')+'.');map.fitBounds([[12.0,48.4],[18.9,51.2]],{padding:35});randomTarget();
-   }catch(e){setStatus('Chyba říčních dat: '+e.message);$('feedback').textContent='Nepodařilo se načíst říční data DIBAVOD. Zkontroluj připojení; podrobnosti jsou ve stavové zprávě.';}
+    map.fitBounds(exercise.mapBounds||[[12.0,48.4],[18.9,51.2]],{padding:35});
+   }catch(e){setStatus('Chyba říčních dat: '+e.message);$('feedback').textContent='Nepodařilo se načíst data cvičení. Zkontroluj připojení; podrobnosti jsou ve stavové zprávě.';}
   });
   map.on('error',e=>{if(e?.error)setStatus('Chyba mapy: '+e.error.message)});
  }catch(e){setStatus('SmartMaps se nepodařilo spustit: '+e.message)}
