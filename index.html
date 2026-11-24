@@ -84,7 +84,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   <div class="label">Vyber cvičení</div><select id="exerciseSelect" aria-label="Vyber cvičení"></select>
   <div class="label">Typ cvičení</div><select id="modeSelect" aria-label="Typ cvičení"><option value="find">1 – Najdi položku na mapě</option><option value="identify">2 – Klikni a pojmenuj</option></select>
   <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div>
-  <div class="attribution" style="margin-top:14px;border-top:1px solid #e1e7ec;padding-top:8px">Slepá mapa <strong>v1.2.8</strong></div>
+  <div class="attribution" style="margin-top:14px;border-top:1px solid #e1e7ec;padding-top:8px">Slepá mapa <strong>v1.2.9</strong></div>
  </section>
  <section id="exercisePanel" hidden>
  <button id="backToSetup" class="secondary" type="button">← Zpět na výběr cvičení</button>
@@ -263,7 +263,11 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
    for(const feature of data.features||[]){
     const rawName=getFeatureProperty(feature.properties,query.nameField);if(!feature.geometry||!rawName)continue;
     const sourceNames=[rawName,getFeatureProperty(feature.properties,'NAZEV_ASCII')].filter(Boolean);
-    const item=config.items.find(entry=>[entry.name,...(entry.aliases||[])].some(alias=>sourceNames.some(sourceName=>normalized(alias)===normalized(sourceName))));
+    const rawCode=query.codeField?String(getFeatureProperty(feature.properties,query.codeField)??'').trim():'';
+    const item=config.items.find(entry=>
+     (entry.code&&rawCode&&String(entry.code).trim()===rawCode)||
+     [entry.name,...(entry.aliases||[])].some(alias=>sourceNames.some(sourceName=>normalized(alias)===normalized(sourceName)))
+    );
     if(item)features.push({type:'Feature',properties:{name:item.name,item_id:getFeatureProperty(feature.properties,query.idField)??getFeatureProperty(feature.properties,'OBJECTID'),item_type:sourceIndex===0?'river':'waterbody'},geometry:feature.geometry});
    }
   }
