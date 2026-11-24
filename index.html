@@ -84,7 +84,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   <div class="label">Vyber cvičení</div><select id="exerciseSelect" aria-label="Vyber cvičení"></select>
   <div class="label">Typ cvičení</div><select id="modeSelect" aria-label="Typ cvičení"><option value="find">1 – Najdi položku na mapě</option><option value="identify">2 – Klikni a pojmenuj</option></select>
   <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div>
-  <div class="attribution" style="margin-top:14px;border-top:1px solid #e1e7ec;padding-top:8px">Slepá mapa <strong>v1.2.6</strong></div>
+  <div class="attribution" style="margin-top:14px;border-top:1px solid #e1e7ec;padding-top:8px">Slepá mapa <strong>v1.2.7</strong></div>
  </section>
  <section id="exercisePanel" hidden>
  <button id="backToSetup" class="secondary" type="button">← Zpět na výběr cvičení</button>
@@ -110,7 +110,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <div class="admin-footer"><button id="adminLink" class="text-button" type="button">Přehled cvičení</button></div>
  <section id="adminPanel" hidden aria-live="polite"><div class="admin-head"><strong>Přehled cvičení</strong><button id="adminClose" class="text-button" type="button">Zavřít</button></div><div id="adminContent"></div></section>
  <div class="attribution">Mapový podklad: © SmartMaps · Data: © ISVS Voda / CEVL · ZABAGED</div>
- <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.6</span><time id="footerDateTime"></time></div>
+ <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.7</span><time id="footerDateTime"></time></div>
 </aside>
 <div id="map" aria-label="Interaktivní slepá mapa" hidden></div>
  </section>
@@ -184,16 +184,6 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   tempFeatures=matches.map(feature=>({...feature,properties:{...feature.properties,color:'#f2c230'}}));
   tempLabels=matches.map(feature=>makeLabel(feature,'#9a6b00')).filter(Boolean);
   updateResultLayers();
-  // Zoom to the full extent: large reservoirs may be small at the country overview.
-  const coords=[];
-  const visit=value=>{if(Array.isArray(value)&&typeof value[0]==='number'&&typeof value[1]==='number')coords.push(value);else if(Array.isArray(value))value.forEach(visit);};
-  matches.forEach(feature=>visit(feature.geometry.coordinates));
-  if(coords.length){
-   const bounds=coords.reduce((b,c)=>[[Math.min(b[0][0],c[0]),Math.min(b[0][1],c[1])],[Math.max(b[1][0],c[0]),Math.max(b[1][1],c[1])]],[[Infinity,Infinity],[-Infinity,-Infinity]]);
-   if(Number.isFinite(bounds[0][0])&&Number.isFinite(bounds[1][0])){
-    map.fitBounds(bounds,{padding:90,maxZoom:11,duration:500});
-   }
-  }
   $('feedback').textContent='Na mapě je žlutě zvýrazněna položka '+name+'.';
   window.__listHighlightTimer=setTimeout(()=>{clearTemporary();},5000);
  }
@@ -253,6 +243,12 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   $('target').textContent='Načítám…';
   if(map?.getSource('rivers'))await initializeExerciseLayer(config);
  }
+ async function getFeatureProperty(properties,field){
+  if(!properties||!field)return undefined;
+  if(properties[field]!==undefined)return properties[field];
+  const key=Object.keys(properties).find(name=>name.toLowerCase()===field.toLowerCase());
+  return key?properties[key]:undefined;
+ }
  async function initializeExerciseLayer(config){
   const sources=config.dataSources||[config.dataSource];
   if(!sources.length||sources.some(q=>!q?.url))throw new Error('Cvičení nemá správně nastavené zdroje mapových dat.');
@@ -266,10 +262,10 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
    finally{clearTimeout(timer);}
    if(data.error)throw new Error(data.error.message||'Chyba datové služby.');
    for(const feature of data.features||[]){
-    const rawName=feature.properties?.[query.nameField];if(!feature.geometry||!rawName)continue;
-    const sourceNames=[rawName,feature.properties?.NAZEV_ASCII].filter(Boolean);
+    const rawName=getFeatureProperty(feature.properties,query.nameField);if(!feature.geometry||!rawName)continue;
+    const sourceNames=[rawName,getFeatureProperty(feature.properties,'NAZEV_ASCII')].filter(Boolean);
     const item=config.items.find(entry=>[entry.name,...(entry.aliases||[])].some(alias=>sourceNames.some(sourceName=>normalized(alias)===normalized(sourceName))));
-    if(item)features.push({type:'Feature',properties:{name:item.name,item_id:feature.properties[query.idField]??feature.properties.OBJECTID,item_type:sourceIndex===0?'river':'waterbody'},geometry:feature.geometry});
+    if(item)features.push({type:'Feature',properties:{name:item.name,item_id:getFeatureProperty(feature.properties,query.idField)??getFeatureProperty(feature.properties,'OBJECTID'),item_type:sourceIndex===0?'river':'waterbody'},geometry:feature.geometry});
    }
   }
   if(!features.length)throw new Error('Datové zdroje nevrátily žádnou položku cvičení. Zkontroluj názvy v datech.');
@@ -291,16 +287,10 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  let showExerciseNames=true;
  function applyNameVisibility(){
   if(!map)return;
-  showExerciseNames=!!$('showNames')?.checked;
-  for(const id of ['river-result-labels-layer','river-temp-label-layer']){
-   if(!map.getLayer(id))continue;
-   try{
-    map.setLayoutProperty(id,'visibility',showExerciseNames?'visible':'none');
-    map.setPaintProperty(id,'text-opacity',showExerciseNames?1:0);
-    map.setPaintProperty(id,'text-halo-color',showExerciseNames?'#ffffff':'rgba(255,255,255,0)');
-   }catch(e){}
-  }
-  if(typeof map.triggerRepaint==='function')map.triggerRepaint();
+  const enabled=!!$('showNames')?.checked;
+  showExerciseNames=enabled;
+  map.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:enabled?resultLabels:[]});
+  map.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:enabled?tempLabels:[]});
  }
  function applyBaseMapSettings(config){
   if(!map||!map.isStyleLoaded?.())return;
@@ -325,10 +315,9 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  function normalizedName(s){return normalized(s).replace(/kraj/g,'');}
  function updateResultLayers(){
   map?.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:resultFeatures});
-  map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:resultLabels});
+  map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:showExerciseNames?resultLabels:[]});
   map?.getSource('river-temp-line')?.setData({type:'FeatureCollection',features:tempFeatures});
-  map?.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:tempLabels});
-  applyNameVisibility();
+  map?.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:showExerciseNames?tempLabels:[]});
  }
  function makeLabel(feature,color){
   if(feature.geometry.type==='Polygon'||feature.geometry.type==='MultiPolygon'){
@@ -490,7 +479,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  $('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
  $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;hintLevel=0;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další položku.';}else randomTarget();});
  $('modeSelect').addEventListener('change',e=>{mode=e.target.value;selectedOnMap=null;clearTemporary();answered=false;renderTask();$('feedback').textContent=mode==='identify'?'Klikni na řeku a napiš její název.':'Najdi řeku uvedenou nahoře.';if(mode==='find'&&!target)randomTarget();});
- $('showNames').addEventListener('change',()=>{showExerciseNames=$('showNames').checked;applyNameVisibility();});
+ $('showNames').addEventListener('change',applyNameVisibility);
  $('show').addEventListener('click',revealTarget);
  $('back').addEventListener('click',goBack);
  window.addEventListener('resize',()=>{if(map)requestAnimationFrame(()=>map.resize());});
@@ -518,7 +507,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
       map.addSource('river-temp-line',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-fill-layer',type:'fill',source:'river-temp-line',filter:['all',['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]],['==',['get','item_type'],'waterbody']],paint:{'fill-color':['get','color'],'fill-opacity':0.72}});
       map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',filter:['any',['==',['get','item_type'],'river'],['all',['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]],['==',['get','item_type'],'waterbody']]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,2.8,8,4,12,5],'line-opacity':1}});
       map.addSource('river-temp-label',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-label-layer',type:'symbol',source:'river-temp-label',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
-      showExerciseNames=$('showNames').checked;applyNameVisibility();
+      applyNameVisibility();
       applyBaseMapSettings(exercise);await initializeExerciseLayer(exercise);
       map.on('click',e=>{const name=nearestNameAtPixel(e.point,40);if(name){onRiver(name);return;}$('feedback').textContent='Klikni na plochu položky nebo blízko její linie.';});
      }catch(e){setStatus('Chyba mapových dat: '+e.message);$('feedback').textContent='Nepodařilo se načíst mapová data: '+e.message;}
