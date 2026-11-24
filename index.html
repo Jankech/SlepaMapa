@@ -116,7 +116,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 (()=> {
  const apiKey=decodeURIComponent('Nks9q7VYoJQux5c%2B2X6ZYxVhZTllaEZsBVa2B5hPTVd1xqJ6t7WBNO%2BoDJp9zo1w');
  let rivers=[];let exercise=null;let exerciseRegistry=[];
- const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null,mode='find';let resultLabels=[],resultFeatures=[],tempFeatures=[],tempLabels=[],history=[],historyIndex=-1,errors=0;
+ const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null,mode='find';let resultLabels=[],resultFeatures=[],tempFeatures=[],tempLabels=[],history=[],historyIndex=-1,errors=0,hintLevel=0;
  const mapEl=$('map');let riverState={};
  const setStatus=t=>$('status').textContent=t;
  const stats=()=>{$('score').textContent=score;$('attempts').textContent=attempts;$('errors').textContent=errors};
@@ -303,14 +303,15 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(!name)return;
   if(mode==='identify'){
    if(riverState[canonicalName(name)]==='done'){$('feedback').textContent='Tuto položku už máš správně pojmenovanou. Vyber jinou.';return;}
-   selectedOnMap=name;
+   selectedOnMap=name;hintLevel=0;
    const selectedFeature=fc?.features.find(f=>f.properties.name===name);
    tempFeatures=selectedFeature?[{...selectedFeature,properties:{...selectedFeature.properties,color:'#e0a000'}}]:[];
-   tempLabels=selectedFeature?[makeLabel(selectedFeature,'#a65b00')].filter(Boolean):[];
+   tempLabels=[];
    updateResultLayers();
    renderTask();
-   $('answerArea').innerHTML='<label for="nameAnswer" style="display:block;font-size:13px;font-weight:700;margin-bottom:5px">Napiš název vybrané položky</label><div id="answerRow"><input id="nameAnswer" type="text" autocomplete="off" placeholder="Sem napiš název…" aria-label="Název položky"><button id="submitName" type="button">Ověřit</button></div>';
+   $('answerArea').innerHTML='<label for="nameAnswer" style="display:block;font-size:13px;font-weight:700;margin-bottom:5px">Napiš název vybrané položky</label><div id="answerRow"><input id="nameAnswer" type="text" autocomplete="off" placeholder="Sem napiš název…" aria-label="Název položky"><button id="submitName" type="button">Ověřit</button></div><button id="hintName" class="secondary" type="button">Nápověda</button>';
    $('submitName').addEventListener('click',submitIdentify);
+   $('hintName').addEventListener('click',showNameHint);
    $('nameAnswer').addEventListener('keydown',e=>{if(e.key==='Enter')submitIdentify();});
    $('nameAnswer').focus();
    $('feedback').textContent='Vybral/a jsi položku. Napiš její název.';
@@ -330,6 +331,13 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   }
   return row[b.length];
  }
+ function showNameHint(){
+  if(!selectedOnMap)return;
+  const name=canonicalName(selectedOnMap),plain=normalizedName(name);
+  hintLevel=Math.min(hintLevel+1,3);
+  const prefix=plain.slice(0,hintLevel);
+  $('feedback').textContent=hintLevel===1?'Nápověda: název začíná na „'+prefix.toUpperCase()+'“ a má '+plain.length+' písmen (bez mezer).':hintLevel===2?'Další nápověda: první dvě písmena jsou „'+prefix.toUpperCase()+'“.':'Nápověda: první tři písmena jsou „'+prefix.toUpperCase()+'“. Zkus si vzpomenout na celý název.';
+ }
  function submitIdentify(){
   if(!selectedOnMap)return;
   const input=$('nameAnswer');if(!input)return;
@@ -344,10 +352,10 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(ok){
    score++;riverState[correct]='done';
    if(feature){resultFeatures=resultFeatures.filter(f=>canonicalName(f.properties.name)!==correct);resultFeatures.push({...feature,properties:{...feature.properties,color:'#16833b'}});resultLabels=resultLabels.filter(f=>canonicalName(f.properties.name)!==correct);const label=makeLabel(feature,'#16833b');if(label)resultLabels.push(label);}
-   selectedOnMap=null;stats();renderRiverList();updateResultLayers();renderTask();$('feedback').textContent='Správně! '+correct+'. Vyber další řeku.';
+   selectedOnMap=null;hintLevel=0;stats();renderRiverList();updateResultLayers();renderTask();$('feedback').textContent='Správně! '+correct+'. Vyber další položku na mapě.';
   }else{
    errors++;stats();
-   if(feature){tempFeatures=[{...feature,properties:{...feature.properties,color:'#e0a000'}}];tempLabels=[makeLabel(feature,'#a65b00')].filter(Boolean);updateResultLayers();}
+   if(feature){tempFeatures=[{...feature,properties:{...feature.properties,color:'#d97706'}}];tempLabels=[];updateResultLayers();}
    $('feedback').textContent='To není správně. Zkus název napsat znovu. Diakritika a velikost písmen se neřeší; drobný překlep se toleruje.';
    input.select();
   }
@@ -393,7 +401,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  }
  $('adminLink').addEventListener('click',()=>{$('adminPanel').hidden=!$('adminPanel').hidden;});
  $('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
- $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další řeku.';}else randomTarget();});
+ $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;hintLevel=0;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další položku.';}else randomTarget();});
  $('modeSelect').addEventListener('change',e=>{mode=e.target.value;selectedOnMap=null;clearTemporary();answered=false;renderTask();$('feedback').textContent=mode==='identify'?'Klikni na řeku a napiš její název.':'Najdi řeku uvedenou nahoře.';if(mode==='find'&&!target)randomTarget();});
  $('show').addEventListener('click',revealTarget);
  $('back').addEventListener('click',goBack);
@@ -414,13 +422,13 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
      try{
       map.addSource('rivers',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
       map.addLayer({id:'rivers-fill',type:'fill',source:'rivers',layout:{visibility:'none'},paint:{'fill-color':'#8bd3ee','fill-opacity':0.32}});
-      map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],5,4,8,6,12,8],'line-opacity':1}});
+      map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],5,2.4,8,3.2,12,4.2],'line-opacity':1}});
       map.addLayer({id:'rivers-line',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#00a8e8','line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.2,12,3],'line-opacity':1}});
       map.addSource('river-result-lines',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-result-fill',type:'fill',source:'river-result-lines',filter:['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]],paint:{'fill-color':['get','color'],'fill-opacity':0.22}});
       map.addLayer({id:'river-result-line',type:'line',source:'river-result-lines',filter:['in',['geometry-type'],['literal',['LineString','MultiLineString','Polygon','MultiPolygon']]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,4,8,6,12,8],'line-opacity':1}});
       map.addSource('river-result-labels',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-result-labels-layer',type:'symbol',source:'river-result-labels',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
       map.addSource('river-temp-line',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-fill-layer',type:'fill',source:'river-temp-line',filter:['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]],paint:{'fill-color':['get','color'],'fill-opacity':0.18}});
-      map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',filter:['in',['geometry-type'],['literal',['LineString','MultiLineString','Polygon','MultiPolygon']]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,5,8,7,12,9],'line-opacity':1}});
+      map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',filter:['in',['geometry-type'],['literal',['LineString','MultiLineString','Polygon','MultiPolygon']]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,2.8,8,3.6,12,4.6],'line-opacity':1}});
       map.addSource('river-temp-label',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-label-layer',type:'symbol',source:'river-temp-label',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
       applyBaseMapSettings(exercise);await initializeExerciseLayer(exercise);
       map.on('click',e=>{const name=nearestNameAtPixel(e.point,40);if(name){onRiver(name);return;}$('feedback').textContent='Klikni na plochu položky nebo blízko její linie.';});
