@@ -206,8 +206,8 @@
       "nameField": "NAZEV",
       "idField": "OBJECTID",
       "params": {
-        "where": "NAZEV LIKE '%Černé jezero%' OR NAZEV LIKE '%Lipno%' OR NAZEV LIKE '%Slapy%' OR NAZEV LIKE '%Orlík%' OR NAZEV LIKE '%Seč%'",
-        "outFields": "OBJECTID,NAZEV,TYP"
+        "where": "(NAZEV LIKE '%Černé jezero%' OR NAZEV_ASCII LIKE '%Cerne jezero%' OR NAZEV LIKE '%Lipno%' OR NAZEV_ASCII LIKE '%Lipno%' OR NAZEV LIKE '%Slapy%' OR NAZEV_ASCII LIKE '%Slapy%' OR NAZEV LIKE '%Orlík%' OR NAZEV_ASCII LIKE '%Orlik%' OR NAZEV LIKE '%Seč%' OR NAZEV_ASCII LIKE '%Sec%')",
+        "outFields": "OBJECTID,NAZEV,NAZEV_ASCII,TYP"
       }
     }
   ],
