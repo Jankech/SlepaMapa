@@ -84,7 +84,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   <div class="label">Vyber cvičení</div><select id="exerciseSelect" aria-label="Vyber cvičení"></select>
   <div class="label">Typ cvičení</div><select id="modeSelect" aria-label="Typ cvičení"><option value="find">1 – Najdi položku na mapě</option><option value="identify">2 – Klikni a pojmenuj</option></select>
   <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div>
-  <div class="attribution" style="margin-top:14px;border-top:1px solid #e1e7ec;padding-top:8px">Slepá mapa <strong>v1.2.7</strong></div>
+  <div class="attribution" style="margin-top:14px;border-top:1px solid #e1e7ec;padding-top:8px">Slepá mapa <strong>v1.2.8</strong></div>
  </section>
  <section id="exercisePanel" hidden>
  <button id="backToSetup" class="secondary" type="button">← Zpět na výběr cvičení</button>
@@ -97,7 +97,6 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   <button id="back" class="secondary">Předchozí otázka</button>
  </div>
  <div class="stats"><div class="stat"><strong id="score">0</strong>Správně</div><div class="stat"><strong id="attempts">0</strong>Pokusy</div><div class="stat"><strong id="errors">0</strong>Chyby</div></div>
- <label style="display:flex;align-items:center;gap:8px;margin-top:9px;font-size:13px;color:#526170"><input id="showNames" type="checkbox" checked style="width:auto;margin:0"> Zobrazovat názvy na mapě</label>
  <div id="answerArea"></div>
  <div id="feedback" role="status">Načítám mapu a říční data…</div>
  <button id="reset" class="secondary">Vynulovat skóre</button>
@@ -110,7 +109,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <div class="admin-footer"><button id="adminLink" class="text-button" type="button">Přehled cvičení</button></div>
  <section id="adminPanel" hidden aria-live="polite"><div class="admin-head"><strong>Přehled cvičení</strong><button id="adminClose" class="text-button" type="button">Zavřít</button></div><div id="adminContent"></div></section>
  <div class="attribution">Mapový podklad: © SmartMaps · Data: © ISVS Voda / CEVL · ZABAGED</div>
- <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.7</span><time id="footerDateTime"></time></div>
+ <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.8</span><time id="footerDateTime"></time></div>
 </aside>
 <div id="map" aria-label="Interaktivní slepá mapa" hidden></div>
  </section>
@@ -284,13 +283,11 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   map.fitBounds(config.mapBounds||[[12.0,48.4],[18.9,51.2]],{padding:35});
   randomTarget();
  }
- let showExerciseNames=true;
+ const showExerciseNames=true;
  function applyNameVisibility(){
   if(!map)return;
-  const enabled=!!$('showNames')?.checked;
-  showExerciseNames=enabled;
-  map.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:enabled?resultLabels:[]});
-  map.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:enabled?tempLabels:[]});
+  map.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:resultLabels});
+  map.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:tempLabels});
  }
  function applyBaseMapSettings(config){
   if(!map||!map.isStyleLoaded?.())return;
@@ -311,13 +308,16 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   }
   applyNameVisibility();
  }
- function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
+ function normalized(value){
+  const s=value==null?'':String(value);
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');
+ }
  function normalizedName(s){return normalized(s).replace(/kraj/g,'');}
  function updateResultLayers(){
   map?.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:resultFeatures});
-  map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:showExerciseNames?resultLabels:[]});
+  map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:resultLabels});
   map?.getSource('river-temp-line')?.setData({type:'FeatureCollection',features:tempFeatures});
-  map?.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:showExerciseNames?tempLabels:[]});
+  map?.getSource('river-temp-label')?.setData({type:'FeatureCollection',features:tempLabels});
  }
  function makeLabel(feature,color){
   if(feature.geometry.type==='Polygon'||feature.geometry.type==='MultiPolygon'){
@@ -479,7 +479,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  $('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
  $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;hintLevel=0;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další položku.';}else randomTarget();});
  $('modeSelect').addEventListener('change',e=>{mode=e.target.value;selectedOnMap=null;clearTemporary();answered=false;renderTask();$('feedback').textContent=mode==='identify'?'Klikni na řeku a napiš její název.':'Najdi řeku uvedenou nahoře.';if(mode==='find'&&!target)randomTarget();});
- $('showNames').addEventListener('change',applyNameVisibility);
+ // Exercise labels are always enabled; no user toggle.
  $('show').addEventListener('click',revealTarget);
  $('back').addEventListener('click',goBack);
  window.addEventListener('resize',()=>{if(map)requestAnimationFrame(()=>map.resize());});
