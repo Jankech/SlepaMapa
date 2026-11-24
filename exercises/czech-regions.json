@@ -84,6 +84,8 @@
     }
   ],
   "baseMap": {
-    "hideLabels": true
+    "hideLabels": true,
+    "blank": true,
+    "hideWater": true
   }
 }
