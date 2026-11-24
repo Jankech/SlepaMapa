@@ -243,6 +243,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   }
  }
  function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
+ function normalizedName(s){return normalized(s).replace(/kraj/g,'');}
  function updateResultLayers(){
   map?.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:resultFeatures});
   map?.getSource('river-result-labels')?.setData({type:'FeatureCollection',features:resultLabels});
@@ -302,7 +303,12 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(!name)return;
   if(mode==='identify'){
    if(riverState[canonicalName(name)]==='done'){$('feedback').textContent='Tuto položku už máš správně pojmenovanou. Vyber jinou.';return;}
-   selectedOnMap=name;renderTask();
+   selectedOnMap=name;
+   const selectedFeature=fc?.features.find(f=>f.properties.name===name);
+   tempFeatures=selectedFeature?[{...selectedFeature,properties:{...selectedFeature.properties,color:'#e0a000'}}]:[];
+   tempLabels=selectedFeature?[makeLabel(selectedFeature,'#a65b00')].filter(Boolean):[];
+   updateResultLayers();
+   renderTask();
    $('answerArea').innerHTML='<label for="nameAnswer" style="display:block;font-size:13px;font-weight:700;margin-bottom:5px">Napiš název vybrané položky</label><div id="answerRow"><input id="nameAnswer" type="text" autocomplete="off" placeholder="Sem napiš název…" aria-label="Název položky"><button id="submitName" type="button">Ověřit</button></div>';
    $('submitName').addEventListener('click',submitIdentify);
    $('nameAnswer').addEventListener('keydown',e=>{if(e.key==='Enter')submitIdentify();});
@@ -327,12 +333,12 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  function submitIdentify(){
   if(!selectedOnMap)return;
   const input=$('nameAnswer');if(!input)return;
-  const answer=normalized(input.value),correct=canonicalName(selectedOnMap),expected=normalized(correct);
-  if(!answer){$('feedback').textContent='Nejdřív napiš název řeky.';return;}
+  const answer=normalizedName(input.value),correct=canonicalName(selectedOnMap),expected=normalizedName(correct);
+  if(!answer){$('feedback').textContent='Nejdřív napiš název položky.';return;}
   attempts++;
-  // Ignore diacritics and case; allow one small typo from 5 characters and two from 9 characters.
+  // Diacritics, case and the word "kraj" are optional; small typos are tolerated.
   const limit=expected.length>=9?2:expected.length>=5?1:0;
-  const exactOther=rivers.some(([,n])=>normalized(n)===answer&&normalized(n)!==expected);
+  const exactOther=rivers.some(([,n])=>normalizedName(n)===answer&&normalizedName(n)!==expected);
   const ok=!exactOther&&editDistance(answer,expected)<=limit;
   const feature=fc?.features.find(f=>canonicalName(f.properties.name)===correct);
   if(ok){
@@ -341,7 +347,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
    selectedOnMap=null;stats();renderRiverList();updateResultLayers();renderTask();$('feedback').textContent='Správně! '+correct+'. Vyber další řeku.';
   }else{
    errors++;stats();
-   if(feature){tempFeatures=[{...feature,properties:{...feature.properties,color:'#d93025'}}];tempLabels=[makeLabel(feature,'#d93025')].filter(Boolean);updateResultLayers();}
+   if(feature){tempFeatures=[{...feature,properties:{...feature.properties,color:'#e0a000'}}];tempLabels=[makeLabel(feature,'#a65b00')].filter(Boolean);updateResultLayers();}
    $('feedback').textContent='To není správně. Zkus název napsat znovu. Diakritika a velikost písmen se neřeší; drobný překlep se toleruje.';
    input.select();
   }
