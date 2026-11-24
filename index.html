@@ -86,6 +86,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div>
  </section>
  <section id="exercisePanel" hidden>
+ <button id="backToSetup" class="secondary" type="button">← Zpět na výběr cvičení</button>
  <div class="label">Procvičování</div>
  <div class="label" id="taskLabel">Položka k nalezení</div>
  <div id="target"></div>
@@ -351,8 +352,8 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   const feature=fc?.features.find(f=>canonicalName(f.properties.name)===correct);
   if(ok){
    score++;riverState[correct]='done';
-   if(feature){resultFeatures=resultFeatures.filter(f=>canonicalName(f.properties.name)!==correct);resultFeatures.push({...feature,properties:{...feature.properties,color:'#16833b'}});resultLabels=resultLabels.filter(f=>canonicalName(f.properties.name)!==correct);const label=makeLabel(feature,'#16833b');if(label)resultLabels.push(label);}
-   selectedOnMap=null;hintLevel=0;stats();renderRiverList();updateResultLayers();renderTask();$('feedback').textContent='Správně! '+correct+'. Vyber další položku na mapě.';
+   if(feature){resultFeatures=resultFeatures.filter(f=>canonicalName(f.properties.name)!==correct);resultFeatures.push({...feature,properties:{...feature.properties,color:'#16833b'}});resultLabels=resultLabels.filter(f=>canonicalName(f.properties.name)!==correct);}
+   selectedOnMap=null;hintLevel=0;clearTemporary();stats();renderRiverList();updateResultLayers();renderTask();$('feedback').textContent='Správně! Položka je označena zeleně. Klikni na další položku.';
   }else{
    errors++;stats();
    if(feature){tempFeatures=[{...feature,properties:{...feature.properties,color:'#d97706'}}];tempLabels=[];updateResultLayers();}
@@ -422,13 +423,13 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
      try{
       map.addSource('rivers',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
       map.addLayer({id:'rivers-fill',type:'fill',source:'rivers',layout:{visibility:'none'},paint:{'fill-color':'#8bd3ee','fill-opacity':0.32}});
-      map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],5,2.4,8,3.2,12,4.2],'line-opacity':1}});
+      map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],5,0.8,8,1.1,12,1.5],'line-opacity':0.9}});
       map.addLayer({id:'rivers-line',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#00a8e8','line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.2,12,3],'line-opacity':1}});
-      map.addSource('river-result-lines',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-result-fill',type:'fill',source:'river-result-lines',filter:['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]],paint:{'fill-color':['get','color'],'fill-opacity':0.22}});
-      map.addLayer({id:'river-result-line',type:'line',source:'river-result-lines',filter:['in',['geometry-type'],['literal',['LineString','MultiLineString','Polygon','MultiPolygon']]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,4,8,6,12,8],'line-opacity':1}});
+      map.addSource('river-result-lines',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-result-fill',type:'fill',source:'river-result-lines',filter:['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]],paint:{'fill-color':['get','color'],'fill-opacity':0.88}});
+      map.addLayer({id:'river-result-line',type:'line',source:'river-result-lines',filter:['in',['geometry-type'],['literal',['LineString','MultiLineString','Polygon','MultiPolygon']]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,2,8,2.8,12,3.6],'line-opacity':1}});
       map.addSource('river-result-labels',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-result-labels-layer',type:'symbol',source:'river-result-labels',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
       map.addSource('river-temp-line',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-fill-layer',type:'fill',source:'river-temp-line',filter:['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]],paint:{'fill-color':['get','color'],'fill-opacity':0.18}});
-      map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',filter:['in',['geometry-type'],['literal',['LineString','MultiLineString','Polygon','MultiPolygon']]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,2.8,8,3.6,12,4.6],'line-opacity':1}});
+      map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',filter:['in',['geometry-type'],['literal',['LineString','MultiLineString','Polygon','MultiPolygon']]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.1,12,2.8],'line-opacity':1}});
       map.addSource('river-temp-label',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-label-layer',type:'symbol',source:'river-temp-label',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
       applyBaseMapSettings(exercise);await initializeExerciseLayer(exercise);
       map.on('click',e=>{const name=nearestNameAtPixel(e.point,40);if(name){onRiver(name);return;}$('feedback').textContent='Klikni na plochu položky nebo blízko její linie.';});
@@ -439,6 +440,11 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   }catch(e){$('setupStatus').textContent='Chyba: '+e.message;}
  }
  $('startButton').addEventListener('click',startExercise);
+ $('backToSetup').addEventListener('click',()=>{
+  $('exercisePanel').hidden=true;$('map').hidden=true;$('setupPanel').hidden=false;$('appMain').classList.add('setup');
+  document.querySelector('header h1').textContent='Slepá mapa';document.querySelector('header p').textContent='Vyber cvičení a typ procvičování.';
+  $('setupStatus').textContent='Vyber cvičení a typ procvičování.';
+ });
  $('adminLink').addEventListener('click',()=>{$('adminPanel').hidden=!$('adminPanel').hidden;});$('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
  $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další položku.';}else randomTarget();});
  $('show').addEventListener('click',revealTarget);$('back').addEventListener('click',goBack);
