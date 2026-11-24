@@ -202,12 +202,12 @@
       }
     },
     {
-      "url": "https://mapy.geology.cz/arcgis/rest/services/Topografie/ZABAGED_komplet/MapServer/12/query",
-      "nameField": "NAZEV",
+      "url": "https://ags.cuzk.gov.cz/arcgis/rest/services/ZABAGED_POLOHOPIS/MapServer/132/query",
+      "nameField": "JMENO",
       "idField": "OBJECTID",
       "params": {
-        "where": "(NAZEV LIKE '%Černé jezero%' OR NAZEV_ASCII LIKE '%Cerne jezero%' OR NAZEV LIKE '%Lipno%' OR NAZEV_ASCII LIKE '%Lipno%' OR NAZEV LIKE '%Slapy%' OR NAZEV_ASCII LIKE '%Slapy%' OR NAZEV LIKE '%Orlík%' OR NAZEV_ASCII LIKE '%Orlik%' OR NAZEV LIKE '%Seč%' OR NAZEV_ASCII LIKE '%Sec%')",
-        "outFields": "OBJECTID,NAZEV,NAZEV_ASCII,TYP"
+        "where": "JMENO LIKE '%Černé jezero%' OR JMENO LIKE '%Lipno%' OR JMENO LIKE '%Slapy%' OR JMENO LIKE '%Orlík%' OR JMENO LIKE '%Seč%'",
+        "outFields": "OBJECTID,JMENO,FID_ZBG,STOJVODA,TYP_VP_K,TYP_VP_P"
       }
     }
   ],
