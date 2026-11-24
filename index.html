@@ -261,11 +261,18 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  }
  function applyBaseMapSettings(config){
   if(!map||!map.getStyle())return;
-  const hideLabels=!!config?.baseMap?.hideLabels;
+  const hideLabels=config?.baseMap?.hideLabels??false;
+  const hideWater=config?.baseMap?.hideWater??false;
   const layers=map.getStyle().layers||[];
   for(const layer of layers){
-   if(layer.type!=='symbol')continue;
-   try{map.setLayoutProperty(layer.id,'visibility',hideLabels?'none':'visible');}catch(e){}
+   const sourceLayer=(layer['source-layer']||'').toLowerCase();
+   const layerId=(layer.id||'').toLowerCase();
+   const isWater=sourceLayer.startsWith('water_')||/water|waterway|river|canal|stream/.test(layerId);
+   if((hideLabels&&layer.type==='symbol')||(hideWater&&isWater)){
+    try{map.setLayoutProperty(layer.id,'visibility','none');}catch(e){}
+   }else if(layer.type==='symbol'||isWater){
+    try{map.setLayoutProperty(layer.id,'visibility','visible');}catch(e){}
+   }
   }
  }
  function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
