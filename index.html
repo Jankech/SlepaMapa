@@ -83,7 +83,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <section id="setupPanel">
   <div class="label">Vyber cvičení</div><select id="exerciseSelect" aria-label="Vyber cvičení"></select>
   <div class="label">Typ cvičení</div><select id="modeSelect" aria-label="Typ cvičení"><option value="find">1 – Najdi položku na mapě</option><option value="identify">2 – Klikni a pojmenuj</option></select>
-  <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div><div class="attribution" style="margin-top:12px">Slepá mapa <strong>v1.2.5</strong></div>
+  <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div><div class="attribution" style="margin-top:12px">Slepá mapa <strong>v1.2.6</strong></div>
  </section>
  <section id="exercisePanel" hidden>
  <button id="backToSetup" class="secondary" type="button">← Zpět na výběr cvičení</button>
@@ -109,7 +109,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <div class="admin-footer"><button id="adminLink" class="text-button" type="button">Přehled cvičení</button></div>
  <section id="adminPanel" hidden aria-live="polite"><div class="admin-head"><strong>Přehled cvičení</strong><button id="adminClose" class="text-button" type="button">Zavřít</button></div><div id="adminContent"></div></section>
  <div class="attribution">Mapový podklad: © SmartMaps · Data: © ISVS Voda / CEVL · ZABAGED</div>
- <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.5</span><time id="footerDateTime"></time></div>
+ <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.6</span><time id="footerDateTime"></time></div>
 </aside>
 <div id="map" aria-label="Interaktivní slepá mapa" hidden></div>
  </section>
@@ -287,7 +287,11 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
    if(data.error)throw new Error(data.error.message||'Chyba datové služby.');
    for(const feature of data.features||[]){
     const rawName=feature.properties?.[query.nameField];if(!feature.geometry||!rawName)continue;
-    const item=config.items.find(entry=>[entry.name,...(entry.aliases||[])].some(n=>normalized(n)===normalized(rawName)));
+    const sourceNames=[rawName,feature.properties?.NAZEV_ASCII].filter(Boolean);
+    const item=config.items.find(entry=>
+     [entry.name,...(entry.aliases||[])].some(alias=>sourceNames.some(sourceName=>normalized(alias)===normalized(sourceName)))&&
+     featureMatchesBounds(feature,entry.matchBounds)
+    );
     if(item)features.push({type:'Feature',properties:{name:item.name,item_id:feature.properties[query.idField]??feature.properties.OBJECTID,item_type:sourceIndex===0?'river':'waterbody'},geometry:feature.geometry});
    }
   }
@@ -297,16 +301,20 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   const polygon=config.geometryType==='polygon'||config.geometryType==='mixed';
   const line=config.geometryType!=='polygon';
   if(map.getLayer('rivers-fill')){
-   map.setLayoutProperty('rivers-fill','visibility',polygon?'visible':'none');
-   map.setFilter('rivers-fill',['all',['==',['get','item_type'],'waterbody'],['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]]]);
+   // Water bodies are displayed as outlines only, never as filled areas.
+   map.setLayoutProperty('rivers-fill','visibility','none');
+   map.setFilter('rivers-fill',['==',['get','item_type'],'__disabled__']);
   }
   if(map.getLayer('rivers-corridor')){
    map.setLayoutProperty('rivers-corridor','visibility',line?'visible':'none');
    map.setFilter('rivers-corridor',['all',['==',['get','item_type'],'river'],['in',['geometry-type'],['literal',['LineString','MultiLineString']]]]);
   }
   if(map.getLayer('rivers-line')){
-   map.setLayoutProperty('rivers-line','visibility',line?'visible':'none');
-   map.setFilter('rivers-line',['all',['==',['get','item_type'],'river'],['in',['geometry-type'],['literal',['LineString','MultiLineString']]]]);
+   map.setLayoutProperty('rivers-line','visibility','visible');
+   map.setFilter('rivers-line',['any',
+    ['all',['==',['get','item_type'],'river'],['in',['geometry-type'],['literal',['LineString','MultiLineString']]]],
+    ['all',['==',['get','item_type'],'waterbody'],['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]]]
+   ]);
   }
   ['river-result-lines','river-result-labels','river-temp-line','river-temp-label'].forEach(id=>map.getSource(id)?.setData({type:'FeatureCollection',features:[]}));
   setStatus('Načteno '+new Set(features.map(f=>f.properties.name)).size+' z '+rivers.length+' položek.');
@@ -329,7 +337,18 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
    }catch(e){}
   }
  }
- function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
+ function normalized(s){return String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
+ function featureMatchesBounds(feature,bounds){
+  if(!bounds)return true;
+  let found=false;
+  const visit=value=>{
+   if(found||!Array.isArray(value))return;
+   if(typeof value[0]==='number'&&typeof value[1]==='number'){
+    if(value[0]>=bounds[0]&&value[0]<=bounds[2]&&value[1]>=bounds[1]&&value[1]<=bounds[3])found=true;
+   }else value.forEach(visit);
+  };
+  visit(feature.geometry?.coordinates);return found;
+ }
  function normalizedName(s){return normalized(s).replace(/kraj/g,'');}
  function updateResultLayers(){
   map?.getSource('river-result-lines')?.setData({type:'FeatureCollection',features:resultFeatures});
@@ -510,10 +529,10 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
       map.addLayer({id:'rivers-fill',type:'fill',source:'rivers',layout:{visibility:'none'},paint:{'fill-color':'#8bd3ee','fill-opacity':0.32}});
       map.addLayer({id:'rivers-corridor',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],5,0.8,8,1.1,12,1.5],'line-opacity':0.9}});
       map.addLayer({id:'rivers-line',type:'line',source:'rivers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#00a8e8','line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.2,12,3],'line-opacity':1}});
-      map.addSource('river-result-lines',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-result-fill',type:'fill',source:'river-result-lines',filter:['all',['==',['get','item_type'],'waterbody'],['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]]],paint:{'fill-color':['get','color'],'fill-opacity':0.88}});
+      map.addSource('river-result-lines',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-result-fill',type:'fill',source:'river-result-lines',filter:['==',['get','item_type'],'__disabled__'],paint:{'fill-color':['get','color'],'fill-opacity':0}});
       map.addLayer({id:'river-result-line',type:'line',source:'river-result-lines',filter:['any',['all',['==',['get','item_type'],'river'],['in',['geometry-type'],['literal',['LineString','MultiLineString']]]],['all',['==',['get','item_type'],'waterbody'],['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]]]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,2,8,2.8,12,3.6],'line-opacity':1}});
       map.addSource('river-result-labels',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-result-labels-layer',type:'symbol',source:'river-result-labels',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
-      map.addSource('river-temp-line',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-fill-layer',type:'fill',source:'river-temp-line',filter:['all',['==',['get','item_type'],'waterbody'],['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]]],paint:{'fill-color':['get','color'],'fill-opacity':0.18}});
+      map.addSource('river-temp-line',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-fill-layer',type:'fill',source:'river-temp-line',filter:['==',['get','item_type'],'__disabled__'],paint:{'fill-color':['get','color'],'fill-opacity':0}});
       map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',filter:['any',['all',['==',['get','item_type'],'river'],['in',['geometry-type'],['literal',['LineString','MultiLineString']]]],['all',['==',['get','item_type'],'waterbody'],['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]]]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.1,12,2.8],'line-opacity':1}});
       map.addSource('river-temp-label',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-label-layer',type:'symbol',source:'river-temp-label',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
       applyBaseMapSettings(exercise);await initializeExerciseLayer(exercise);
