@@ -1,0 +1,11 @@
+{
+  "exercises": [
+    {
+      "title": "Česká republika – řeky",
+      "file": "czech-rivers.json",
+      "description": "30 řek podle pracovního listu, položky 11–40.",
+      "region": "Česká republika",
+      "itemCount": 30
+    }
+  ]
+}
