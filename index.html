@@ -83,7 +83,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <section id="setupPanel">
   <div class="label">Vyber cvičení</div><select id="exerciseSelect" aria-label="Vyber cvičení"></select>
   <div class="label">Typ cvičení</div><select id="modeSelect" aria-label="Typ cvičení"><option value="find">1 – Najdi položku na mapě</option><option value="identify">2 – Klikni a pojmenuj</option></select>
-  <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div><div class="attribution" style="margin-top:12px">Slepá mapa <strong>v1.2.4</strong></div>
+  <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div><div class="attribution" style="margin-top:12px">Slepá mapa <strong>v1.2.5</strong></div>
  </section>
  <section id="exercisePanel" hidden>
  <button id="backToSetup" class="secondary" type="button">← Zpět na výběr cvičení</button>
@@ -109,7 +109,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <div class="admin-footer"><button id="adminLink" class="text-button" type="button">Přehled cvičení</button></div>
  <section id="adminPanel" hidden aria-live="polite"><div class="admin-head"><strong>Přehled cvičení</strong><button id="adminClose" class="text-button" type="button">Zavřít</button></div><div id="adminContent"></div></section>
  <div class="attribution">Mapový podklad: © SmartMaps · Data: © ISVS Voda / CEVL · ZABAGED</div>
- <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.4</span><time id="footerDateTime"></time></div>
+ <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.5</span><time id="footerDateTime"></time></div>
 </aside>
 <div id="map" aria-label="Interaktivní slepá mapa" hidden></div>
  </section>
@@ -118,7 +118,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 <script>
 (()=> {
  const apiKey=decodeURIComponent('Nks9q7VYoJQux5c%2B2X6ZYxVhZTllaEZsBVa2B5hPTVd1xqJ6t7WBNO%2BoDJp9zo1w');
- let rivers=[];let exercise=null;let exerciseRegistry=[];let listPreviewTimer=null;
+ let rivers=[];let exercise=null;let exerciseRegistry=[];let listPreviewTimer=null;let activePreview=null;
  const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null,mode='find';let resultLabels=[],resultFeatures=[],tempFeatures=[],tempLabels=[],history=[],historyIndex=-1,errors=0,hintLevel=0;
  const mapEl=$('map');let riverState={};
  function updateFooterClock(){const el=$('footerDateTime');if(el)el.textContent=new Intl.DateTimeFormat('cs-CZ',{dateStyle:'short',timeStyle:'medium'}).format(new Date());}
@@ -176,24 +176,46 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(mode==='identify')$('target').firstElementChild.textContent=selectedOnMap?'Vybraná položka: '+selectedOnMap:'Klikni na položku na mapě';
   renderRiverList();
  }
+ function cancelPreview(){
+  clearTimeout(listPreviewTimer);listPreviewTimer=null;activePreview=null;
+  clearTemporary();
+  $('fullPreview').textContent='Plný náhled – zobrazit všechny položky';
+  $('feedback').textContent='Náhled byl zrušen.';
+ }
  function previewAllItems(){
+  if(activePreview==='all'){cancelPreview();return;}
   if(!fc?.features?.length){$('feedback').textContent='Nejsou načtené žádné položky k zobrazení.';return;}
-  clearTimeout(listPreviewTimer);
+  clearTimeout(listPreviewTimer);activePreview='all';
   tempFeatures=fc.features.map(feature=>({...feature,properties:{...feature.properties,color:'#f2c230'}}));
   tempLabels=fc.features.map(feature=>makeLabel(feature,'#9a6b00')).filter(Boolean);
   updateResultLayers();
-  $('feedback').textContent='Plný náhled: zobrazeno všech '+new Set(fc.features.map(feature=>feature.properties.name)).size+' položek cvičení.';
+  $('fullPreview').textContent='Zrušit plný náhled';
+  $('feedback').textContent='Plný náhled: zobrazeno všech '+new Set(fc.features.map(feature=>feature.properties.name)).size+' položek. Kliknutím znovu náhled zrušíš.';
+ }
+ function panPreviewIntoVisibleArea(features){
+  if(!map||!features.length)return;
+  const coords=[];
+  const walk=value=>{if(!Array.isArray(value))return;if(typeof value[0]==='number'&&typeof value[1]==='number')coords.push(value);else value.forEach(walk);};
+  features.forEach(feature=>walk(feature.geometry?.coordinates));
+  if(!coords.length)return;
+  const bounds=coords.reduce((b,c)=>({minX:Math.min(b.minX,c[0]),maxX:Math.max(b.maxX,c[0]),minY:Math.min(b.minY,c[1]),maxY:Math.max(b.maxY,c[1])}),{minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity});
+  const center=[(bounds.minX+bounds.maxX)/2,(bounds.minY+bounds.maxY)/2];
+  const mobile=window.matchMedia('(max-width:760px)').matches;
+  const panel=$('exercisePanel');
+  const offset=mobile?[0,-Math.round((panel?.getBoundingClientRect().height||0)/2)]:[Math.round((panel?.getBoundingClientRect().width||340)/2),0];
+  map.easeTo({center,offset,duration:450});
  }
  function previewListItem(name){
+  const key='item:'+name;
+  if(activePreview===key){cancelPreview();return;}
   const matches=(fc?.features||[]).filter(feature=>feature.properties?.name===name);
   if(!matches.length){$('feedback').textContent='Geometrii položky '+name+' se nepodařilo načíst.';return;}
-  clearTimeout(listPreviewTimer);
-  clearTemporary();
+  clearTimeout(listPreviewTimer);activePreview=key;
   tempFeatures=matches.map(feature=>({...feature,properties:{...feature.properties,color:'#f2c230'}}));
   tempLabels=matches.map(feature=>makeLabel(feature,'#9a6b00')).filter(Boolean);
-  updateResultLayers();
-  $('feedback').textContent='Náhled: '+name+' (5 sekund).';
-  listPreviewTimer=setTimeout(()=>{clearTemporary();},5000);
+  updateResultLayers();panPreviewIntoVisibleArea(matches);
+  $('feedback').textContent='Náhled: '+name+' (5 sekund). Kliknutím znovu náhled zrušíš.';
+  listPreviewTimer=setTimeout(()=>{clearTemporary();activePreview=null;listPreviewTimer=null;},5000);
  }
  function renderRiverList(){
   $('riverList').innerHTML='';
