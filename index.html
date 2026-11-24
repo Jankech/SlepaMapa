@@ -83,7 +83,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <section id="setupPanel">
   <div class="label">Vyber cvičení</div><select id="exerciseSelect" aria-label="Vyber cvičení"></select>
   <div class="label">Typ cvičení</div><select id="modeSelect" aria-label="Typ cvičení"><option value="find">1 – Najdi položku na mapě</option><option value="identify">2 – Klikni a pojmenuj</option></select>
-  <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div>
+  <button id="startButton">Spustit cvičení</button><p class="hint">Mapa a ovládací prvky se zobrazí až po výběru cvičení a typu.</p><div id="setupStatus" class="status">Načítám seznam cvičení…</div><div class="attribution" style="margin-top:12px">Slepá mapa <strong>v1.2.3</strong></div>
  </section>
  <section id="exercisePanel" hidden>
  <button id="backToSetup" class="secondary" type="button">← Zpět na výběr cvičení</button>
@@ -117,7 +117,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 <script>
 (()=> {
  const apiKey=decodeURIComponent('Nks9q7VYoJQux5c%2B2X6ZYxVhZTllaEZsBVa2B5hPTVd1xqJ6t7WBNO%2BoDJp9zo1w');
- let rivers=[];let exercise=null;let exerciseRegistry=[];
+ let rivers=[];let exercise=null;let exerciseRegistry=[];let listPreviewTimer=null;
  const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null,mode='find';let resultLabels=[],resultFeatures=[],tempFeatures=[],tempLabels=[],history=[],historyIndex=-1,errors=0,hintLevel=0;
  const mapEl=$('map');let riverState={};
  function updateFooterClock(){const el=$('footerDateTime');if(el)el.textContent=new Intl.DateTimeFormat('cs-CZ',{dateStyle:'short',timeStyle:'medium'}).format(new Date());}
@@ -175,15 +175,28 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(mode==='identify')$('target').firstElementChild.textContent=selectedOnMap?'Vybraná položka: '+selectedOnMap:'Klikni na položku na mapě';
   renderRiverList();
  }
+ function previewListItem(name){
+  const matches=(fc?.features||[]).filter(feature=>feature.properties?.name===name);
+  if(!matches.length){$('feedback').textContent='Geometrii položky '+name+' se nepodařilo načíst.';return;}
+  clearTimeout(listPreviewTimer);
+  clearTemporary();
+  tempFeatures=matches.map(feature=>({...feature,properties:{...feature.properties,color:'#f2c230'}}));
+  tempLabels=matches.map(feature=>makeLabel(feature,'#9a6b00')).filter(Boolean);
+  updateResultLayers();
+  $('feedback').textContent='Náhled: '+name+' (5 sekund).';
+  listPreviewTimer=setTimeout(()=>{clearTemporary();},5000);
+ }
  function renderRiverList(){
   $('riverList').innerHTML='';
   $('completedCount').textContent=score+'/'+rivers.length;
   rivers.forEach(([num,name])=>{
-   const item=document.createElement('div');
+   const item=document.createElement('button');
    const state=riverState[name]||'';
-   item.className='river-item'+(state==='done'?' done':'');
+   item.type='button';item.className='river-item'+(state==='done'?' done':'');
+   item.style.cursor='pointer';item.style.textAlign='left';item.title='Zobrazit náhled na mapě na 5 sekund';
    item.innerHTML='<span class="num">'+num+'</span><span></span>';
    item.lastElementChild.textContent=name+(state==='done'?' ✓':'');
+   item.addEventListener('click',()=>previewListItem(name));
    $('riverList').appendChild(item);
   });
  }
