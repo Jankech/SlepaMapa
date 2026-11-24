@@ -82,8 +82,9 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 <aside>
  <div class="label">Procvičování</div>
  <select id="exerciseSelect" aria-label="Vyber cvičení" hidden></select>
- <div class="label">Řeka k nalezení</div>
- <div class="label">Řeka k procvičení</div>
+ <div class="label">Režim</div>
+ <select id="modeSelect" aria-label="Režim procvičování"><option value="find">1 – Najdi řeku</option><option value="identify">2 – Klikni a pojmenuj</option></select>
+ <div class="label" id="taskLabel">Řeka k nalezení</div>
  <div id="target"></div>
  <div class="control-buttons">
   <button id="show" class="secondary">Ukázat řeku</button>
@@ -110,7 +111,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 (()=> {
  const apiKey=decodeURIComponent('Nks9q7VYoJQux5c%2B2X6ZYxVhZTllaEZsBVa2B5hPTVd1xqJ6t7WBNO%2BoDJp9zo1w');
  let rivers=[];let exercise=null;let exerciseRegistry=[];
- const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null;let resultLabels=[],resultFeatures=[],tempFeatures=[],tempLabels=[],history=[],historyIndex=-1,errors=0;
+ const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null,mode='find';let resultLabels=[],resultFeatures=[],tempFeatures=[],tempLabels=[],history=[],historyIndex=-1,errors=0;
  const mapEl=$('map');let riverState={};
  const setStatus=t=>$('status').textContent=t;
  const stats=()=>{$('score').textContent=score;$('attempts').textContent=attempts;$('errors').textContent=errors};
@@ -158,7 +159,11 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   $('target').innerHTML='<div style="font-size:18px;font-weight:750;color:#173b57"></div>';
   $('target').firstElementChild.textContent=target||'Všechny řeky jsou hotové!';
   $('answerArea').innerHTML='';
-  $('instructions').textContent='Najdi na mapě řeku uvedenou nahoře a klikni na její modrou linii.';
+  $('taskLabel').textContent=mode==='identify'?'Pojmenuj vybranou řeku':'Řeka k nalezení';
+  $('instructions').textContent=mode==='identify'?'Klikni na libovolnou modrou linii řeky. Potom napiš její název.':'Najdi na mapě řeku uvedenou nahoře a klikni na její modrou linii.';
+  $('show').hidden=mode==='identify';
+  $('next').textContent=mode==='identify'?'Zrušit výběr':'Další náhodná';
+  if(mode==='identify')$('target').firstElementChild.textContent=selectedOnMap?'Napiš název vybrané řeky':'Klikni na řeku na mapě';
   renderRiverList();
  }
  function renderRiverList(){
@@ -307,7 +312,51 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  }
  function onRiver(name){
   if(!name)return;
+  if(mode==='identify'){
+   if(riverState[canonicalName(name)]==='done'){$('feedback').textContent='Tuto řeku už máš správně pojmenovanou. Vyber jinou.';return;}
+   selectedOnMap=name;renderTask();
+   $('answerArea').innerHTML='<div id="answerRow"><input id="nameAnswer" type="text" autocomplete="off" placeholder="Název řeky…" aria-label="Název řeky"><button id="submitName" type="button">Ověřit</button></div>';
+   $('submitName').addEventListener('click',submitIdentify);
+   $('nameAnswer').addEventListener('keydown',e=>{if(e.key==='Enter')submitIdentify();});
+   $('nameAnswer').focus();
+   $('feedback').textContent='Vybral/a jsi řeku. Napiš její název.';
+   return;
+  }
   record(name===target,name);
+ }
+ function canonicalName(featureName){
+  const item=rivers.find(([,n])=>normalized(n)===normalized(featureName));
+  return item?item[1]:featureName;
+ }
+ function editDistance(a,b){
+  const row=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+   let prev=row[0];row[0]=i;
+   for(let j=1;j<=b.length;j++){const old=row[j];row[j]=Math.min(row[j]+1,row[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));prev=old;}
+  }
+  return row[b.length];
+ }
+ function submitIdentify(){
+  if(!selectedOnMap)return;
+  const input=$('nameAnswer');if(!input)return;
+  const answer=normalized(input.value),correct=canonicalName(selectedOnMap),expected=normalized(correct);
+  if(!answer){$('feedback').textContent='Nejdřív napiš název řeky.';return;}
+  attempts++;
+  // Ignore diacritics and case; allow one small typo from 5 characters and two from 9 characters.
+  const limit=expected.length>=9?2:expected.length>=5?1:0;
+  const exactOther=rivers.some(([,n])=>normalized(n)===answer&&normalized(n)!==expected);
+  const ok=!exactOther&&editDistance(answer,expected)<=limit;
+  const feature=fc?.features.find(f=>canonicalName(f.properties.name)===correct);
+  if(ok){
+   score++;riverState[correct]='done';
+   if(feature){resultFeatures=resultFeatures.filter(f=>canonicalName(f.properties.name)!==correct);resultFeatures.push({...feature,properties:{...feature.properties,color:'#16833b'}});resultLabels=resultLabels.filter(f=>canonicalName(f.properties.name)!==correct);const label=makeLabel(feature,'#16833b');if(label)resultLabels.push(label);}
+   selectedOnMap=null;stats();renderRiverList();updateResultLayers();renderTask();$('feedback').textContent='Správně! '+correct+'. Vyber další řeku.';
+  }else{
+   errors++;stats();
+   if(feature){tempFeatures=[{...feature,properties:{...feature.properties,color:'#d93025'}}];tempLabels=[makeLabel(feature,'#d93025')].filter(Boolean);updateResultLayers();}
+   $('feedback').textContent='To není správně. Zkus název napsat znovu. Diakritika a velikost písmen se neřeší; drobný překlep se toleruje.';
+   input.select();
+  }
  }
  // Pixel-based hit testing: generous tolerance, independent of thin rendered map strokes.
  function nearestNameAtPixel(point,tolerance=36){
@@ -350,7 +399,8 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  }
  $('adminLink').addEventListener('click',()=>{$('adminPanel').hidden=!$('adminPanel').hidden;});
  $('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
- $('next').addEventListener('click',randomTarget);
+ $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další řeku.';}else randomTarget();});
+ $('modeSelect').addEventListener('change',e=>{mode=e.target.value;selectedOnMap=null;clearTemporary();answered=false;renderTask();$('feedback').textContent=mode==='identify'?'Klikni na řeku a napiš její název.':'Najdi řeku uvedenou nahoře.';if(mode==='find'&&!target)randomTarget();});
  $('show').addEventListener('click',revealTarget);
  $('back').addEventListener('click',goBack);
  window.addEventListener('resize',()=>{if(map)requestAnimationFrame(()=>map.resize());});
