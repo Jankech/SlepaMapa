@@ -351,7 +351,8 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
    const layerId=(layer.id||'').toLowerCase();
    const isWater=['water_lines','water_polygons','water_label'].includes(sourceLayer)||
      /(^|[_-])(water|waterway|river|canal|stream)([_-]|$)/.test(layerId);
-   const hide=(hideLabels&&layer.type==='symbol')||(hideWater&&isWater);
+   const isAppLabel=layerId==='river-result-labels-layer'||layerId==='river-temp-label-layer';
+   const hide=(hideLabels&&layer.type==='symbol'&&!isAppLabel)||(hideWater&&isWater);
    try{
     const current=map.getLayoutProperty(layer.id,'visibility')||'visible';
     const wanted=hide?'none':'visible';
