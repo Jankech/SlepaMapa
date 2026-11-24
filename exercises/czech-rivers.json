@@ -1,6 +1,6 @@
 {
   "id": "czech-rivers",
-  "appTitle": "Slepá mapa ČR – řeky",
+  "appTitle": "Slepá mapa ČR – řeky a vodní plochy",
   "subtitle": "Procvič si řeky a významné vodní plochy České republiky (č. 11–45).",
   "description": "35 řek a významných vodních ploch – pojmenování na slepé mapě.",
   "region": "Česká republika",
@@ -149,7 +149,8 @@
       "number": 41,
       "name": "Černé jezero",
       "aliases": [
-        "Cerne jezero"
+        "Cerne jezero",
+        "Černé jezero"
       ]
     },
     {
