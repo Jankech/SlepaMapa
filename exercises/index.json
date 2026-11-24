@@ -1,11 +1,11 @@
 {
   "exercises": [
     {
-      "title": "Česká republika – řeky",
+      "title": "Česká republika – řeky a vodní plochy",
       "file": "czech-rivers.json",
-      "description": "30 řek podle pracovního listu, položky 11–40.",
+      "description": "30 řek a 5 vodních ploch podle pracovního listu, položky 11–45.",
       "region": "Česká republika",
-      "itemCount": 30
+      "itemCount": 35
     },
     {
       "title": "Česká republika – kraje",
