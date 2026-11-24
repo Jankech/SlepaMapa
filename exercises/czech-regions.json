@@ -23,64 +23,79 @@
     "params": {
       "where": "1=1",
       "outFields": "KOD_NUTS3,NAZEV_NUTS"
-    }
+    },
+    "codeField": "KOD_NUTS3"
   },
   "items": [
     {
       "number": 1,
-      "name": "Hlavní město Praha"
+      "name": "Hlavní město Praha",
+      "code": "CZ010"
     },
     {
       "number": 2,
-      "name": "Středočeský kraj"
+      "name": "Středočeský kraj",
+      "code": "CZ020"
     },
     {
       "number": 3,
-      "name": "Jihočeský kraj"
+      "name": "Jihočeský kraj",
+      "code": "CZ031"
     },
     {
       "number": 4,
-      "name": "Plzeňský kraj"
+      "name": "Plzeňský kraj",
+      "code": "CZ032"
     },
     {
       "number": 5,
-      "name": "Karlovarský kraj"
+      "name": "Karlovarský kraj",
+      "code": "CZ041"
     },
     {
       "number": 6,
-      "name": "Ústecký kraj"
+      "name": "Ústecký kraj",
+      "code": "CZ042"
     },
     {
       "number": 7,
-      "name": "Liberecký kraj"
+      "name": "Liberecký kraj",
+      "code": "CZ051"
     },
     {
       "number": 8,
-      "name": "Královéhradecký kraj"
+      "name": "Královéhradecký kraj",
+      "code": "CZ052"
     },
     {
       "number": 9,
-      "name": "Pardubický kraj"
+      "name": "Pardubický kraj",
+      "code": "CZ053"
     },
     {
       "number": 10,
-      "name": "Kraj Vysočina"
+      "name": "Kraj Vysočina",
+      "code": "CZ063"
     },
     {
       "number": 11,
-      "name": "Jihomoravský kraj"
+      "name": "Jihomoravský kraj",
+      "code": "CZ064"
     },
     {
       "number": 12,
-      "name": "Olomoucký kraj"
+      "name": "Olomoucký kraj",
+      "code": "CZ071"
     },
     {
       "number": 13,
-      "name": "Zlínský kraj"
+      "name": "Zlínský kraj",
+      "code": "CZ072"
     },
     {
       "number": 14,
-      "name": "Moravskoslezský kraj"
+      "name": "Moravskoslezský kraj",
+      "code": "CZ080"
     }
   ],
   "baseMap": {
