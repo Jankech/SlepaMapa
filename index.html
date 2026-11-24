@@ -107,7 +107,8 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <div id="status" class="status">Připravuji mapu…</div>
  <div class="admin-footer"><button id="adminLink" class="text-button" type="button">Přehled cvičení</button></div>
  <section id="adminPanel" hidden aria-live="polite"><div class="admin-head"><strong>Přehled cvičení</strong><button id="adminClose" class="text-button" type="button">Zavřít</button></div><div id="adminContent"></div></section>
- <div class="attribution">Mapový podklad: © SmartMaps · Řeky: © ISVS Voda / CEVL</div>
+ <div class="attribution">Mapový podklad: © SmartMaps · Data: © ISVS Voda / CEVL · ZABAGED</div>
+ <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.0</span><time id="footerDateTime"></time></div>
 </aside>
 <div id="map" aria-label="Interaktivní slepá mapa" hidden></div>
  </section>
@@ -119,6 +120,8 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  let rivers=[];let exercise=null;let exerciseRegistry=[];
  const $=id=>document.getElementById(id);let map=null,fc=null,score=0,attempts=0,target=null,answered=false,selectedOnMap=null,mode='find';let resultLabels=[],resultFeatures=[],tempFeatures=[],tempLabels=[],history=[],historyIndex=-1,errors=0,hintLevel=0;
  const mapEl=$('map');let riverState={};
+ function updateFooterClock(){const el=$('footerDateTime');if(el)el.textContent=new Intl.DateTimeFormat('cs-CZ',{dateStyle:'short',timeStyle:'medium'}).format(new Date());}
+ updateFooterClock();setInterval(updateFooterClock,30000);
  const setStatus=t=>$('status').textContent=t;
  const stats=()=>{$('score').textContent=score;$('attempts').textContent=attempts;$('errors').textContent=errors};
  function showFullMap(){
@@ -227,23 +230,30 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(map?.getSource('rivers'))await initializeExerciseLayer(config);
  }
  async function initializeExerciseLayer(config){
-  const query=config.dataSource;
-  if(!query?.url)throw new Error('Cvičení nemá nastavený zdroj mapových dat.');
-  const params=new URLSearchParams({...query.params, f:'geojson',outSR:'4326',returnGeometry:'true'});
-  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),45000);
-  let data;
-  try{const response=await fetch(query.url+'?'+params.toString(),{signal:controller.signal,mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status);data=await response.json();}
-  finally{clearTimeout(timer);}
-  if(data.error)throw new Error(data.error.message||'Chyba datové služby.');
-  const wanted=new Set(rivers.map(x=>normalized(x[1])));
-  const features=(data.features||[]).filter(f=>f.geometry&&f.properties?.[config.dataSource.nameField]&&wanted.has(normalized(f.properties[config.dataSource.nameField]))).map(f=>({type:'Feature',properties:{name:f.properties[config.dataSource.nameField],item_id:f.properties[config.dataSource.idField]},geometry:f.geometry}));
-  if(!features.length)throw new Error('Datový zdroj nevrátil žádnou položku cvičení.');
+  const sources=config.dataSources||[config.dataSource];
+  if(!sources.length||sources.some(q=>!q?.url))throw new Error('Cvičení nemá správně nastavené zdroje mapových dat.');
+  const features=[];
+  for(const query of sources){
+   const params=new URLSearchParams({...query.params,f:'geojson',outSR:'4326',returnGeometry:'true'});
+   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),45000);
+   let data;
+   try{const response=await fetch(query.url+'?'+params.toString(),{signal:controller.signal,mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status+' – '+query.url);data=await response.json();}
+   finally{clearTimeout(timer);}
+   if(data.error)throw new Error(data.error.message||'Chyba datové služby.');
+   for(const feature of data.features||[]){
+    const rawName=feature.properties?.[query.nameField];if(!feature.geometry||!rawName)continue;
+    const item=config.items.find(entry=>[entry.name,...(entry.aliases||[])].some(n=>normalized(n)===normalized(rawName)));
+    if(item)features.push({type:'Feature',properties:{name:item.name,item_id:feature.properties[query.idField]??feature.properties.OBJECTID},geometry:feature.geometry});
+   }
+  }
+  if(!features.length)throw new Error('Datové zdroje nevrátily žádnou položku cvičení. Zkontroluj názvy v datech.');
   fc={type:'FeatureCollection',features};
   map.getSource('rivers').setData(fc);
-  const polygon=config.geometryType==='polygon';
+  const polygon=config.geometryType==='polygon'||config.geometryType==='mixed';
+  const line=config.geometryType!=='polygon';
   if(map.getLayer('rivers-fill'))map.setLayoutProperty('rivers-fill','visibility',polygon?'visible':'none');
-  if(map.getLayer('rivers-corridor'))map.setLayoutProperty('rivers-corridor','visibility',polygon?'none':'visible');
-  if(map.getLayer('rivers-line'))map.setLayoutProperty('rivers-line','visibility',polygon?'none':'visible');
+  if(map.getLayer('rivers-corridor'))map.setLayoutProperty('rivers-corridor','visibility','visible');
+  if(map.getLayer('rivers-line'))map.setLayoutProperty('rivers-line','visibility',line?'visible':'none');
   ['river-result-lines','river-result-labels','river-temp-line','river-temp-label'].forEach(id=>map.getSource(id)?.setData({type:'FeatureCollection',features:[]}));
   setStatus('Načteno '+new Set(features.map(f=>f.properties.name)).size+' z '+rivers.length+' položek.');
   map.fitBounds(config.mapBounds||[[12.0,48.4],[18.9,51.2]],{padding:35});
