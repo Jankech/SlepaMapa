@@ -192,7 +192,22 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   const select=$('exerciseSelect');select.innerHTML='<option value="">— Vyber cvičení —</option>';
   exerciseRegistry.forEach(item=>{const option=document.createElement('option');option.value=item.file;option.textContent=item.title;select.appendChild(option);});
   $('adminContent').innerHTML='';
-  exerciseRegistry.forEach(item=>{const row=document.createElement('div');row.className='admin-exercise';const title=document.createElement('strong');title.textContent=item.title;row.appendChild(title);const desc=document.createElement('p');desc.textContent=item.description||'Bez popisu';row.appendChild(desc);const meta=document.createElement('p');meta.textContent=(item.region||'')+(item.itemCount?' · '+item.itemCount+' položek':'');row.appendChild(meta);$('adminContent').appendChild(row);});
+  for(const item of exerciseRegistry){
+   const row=document.createElement('div');row.className='admin-exercise';
+   const title=document.createElement('strong');title.textContent=item.title;row.appendChild(title);
+   const desc=document.createElement('p');desc.textContent=item.description||'Bez popisu';row.appendChild(desc);
+   const meta=document.createElement('p');meta.textContent=(item.region||'')+(item.itemCount?' · '+item.itemCount+' bodů':'');row.appendChild(meta);
+   const points=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Zobrazit body / položky';points.appendChild(summary);
+   const list=document.createElement('ol');list.style.paddingLeft='20px';list.style.margin='7px 0';
+   try{
+    const detail=await fetch('./exercises/'+encodeURIComponent(item.file),{cache:'no-store'});
+    if(!detail.ok)throw new Error('HTTP '+detail.status);
+    const config=await detail.json();
+    (config.items||[]).forEach((entry,index)=>{const li=document.createElement('li');li.textContent=(entry.number??index+1)+'. '+entry.name;list.appendChild(li);});
+    if(!list.children.length){const li=document.createElement('li');li.textContent='Žádné body';list.appendChild(li);}
+   }catch(err){const li=document.createElement('li');li.textContent='Položky se nepodařilo načíst: '+err.message;list.appendChild(li);}
+   points.appendChild(list);row.appendChild(points);$('adminContent').appendChild(row);
+  }
   $('setupStatus').textContent='Připraveno. Vyber cvičení a typ procvičování.';
  }
  async function loadExercise(file){
@@ -400,7 +415,6 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   }
   return bestDistance<=tolerance?best:null;
  }
- $('adminLink').addEventListener('click',()=>{$('adminPanel').hidden=!$('adminPanel').hidden;});
  $('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
  $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;hintLevel=0;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další položku.';}else randomTarget();});
  $('modeSelect').addEventListener('change',e=>{mode=e.target.value;selectedOnMap=null;clearTemporary();answered=false;renderTask();$('feedback').textContent=mode==='identify'?'Klikni na řeku a napiš její název.':'Najdi řeku uvedenou nahoře.';if(mode==='find'&&!target)randomTarget();});
