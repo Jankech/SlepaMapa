@@ -195,6 +195,9 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   });
   exercise=await (await fetch('./exercises/'+encodeURIComponent(exerciseRegistry[0].file))).json();
   rivers=exercise.items.map(item=>[item.number??'',item.name]);
+  document.title=exercise.appTitle||'Univerzální slepá mapa';
+  document.querySelector('header h1').textContent=exercise.appTitle||'Slepá mapa';
+  document.querySelector('header p').textContent=exercise.subtitle||exercise.description||'Procvičování na slepé mapě';
   select.addEventListener('change',()=>loadExercise(select.value).catch(e=>setStatus('Chyba cvičení: '+e.message)));
  }
  async function loadExercise(file){
@@ -205,6 +208,10 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   if(!Array.isArray(config.items)||!config.items.length)throw new Error('Soubor cvičení neobsahuje položky.');
   exercise=config;
   rivers=config.items.map(item=>[item.number??'',item.name]);
+  document.title=config.appTitle||'Univerzální slepá mapa';
+  document.querySelector('header h1').textContent=config.appTitle||'Slepá mapa';
+  document.querySelector('header p').textContent=config.subtitle||config.description||'Procvičování na slepé mapě';
+  score=0;attempts=0;errors=0;target=null;answered=false;riverState={};resultFeatures=[];resultLabels=[];tempFeatures=[];tempLabels=[];history=[];historyIndex=-1;stats();renderRiverList();
   $('target').textContent='Načítám…';
   document.querySelector('header h1').textContent=config.appTitle||'Slepá mapa';
   document.querySelector('header p').textContent=config.subtitle||config.description||'Procvičování na slepé mapě';
@@ -228,6 +235,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   map.getSource('rivers').setData(fc);
   ['river-result-lines','river-result-labels','river-temp-line','river-temp-label'].forEach(id=>map.getSource(id)?.setData({type:'FeatureCollection',features:[]}));
   setStatus('Načteno '+new Set(features.map(f=>f.properties.name)).size+' z '+rivers.length+' položek.');
+  map.fitBounds(config.mapBounds||[[12.0,48.4],[18.9,51.2]],{padding:35});
   randomTarget();
  }
  function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
