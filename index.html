@@ -108,7 +108,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
  <div class="admin-footer"><button id="adminLink" class="text-button" type="button">Přehled cvičení</button></div>
  <section id="adminPanel" hidden aria-live="polite"><div class="admin-head"><strong>Přehled cvičení</strong><button id="adminClose" class="text-button" type="button">Zavřít</button></div><div id="adminContent"></div></section>
  <div class="attribution">Mapový podklad: © SmartMaps · Data: © ISVS Voda / CEVL · ZABAGED</div>
- <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.1</span><time id="footerDateTime"></time></div>
+ <div class="attribution" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e1e7ec;padding-top:6px"><span id="appVersion">Slepá mapa v1.2.2</span><time id="footerDateTime"></time></div>
 </aside>
 <div id="map" aria-label="Interaktivní slepá mapa" hidden></div>
  </section>
@@ -260,19 +260,17 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
   randomTarget();
  }
  function applyBaseMapSettings(config){
-  if(!map||!map.isStyleLoaded?.())return;
+  if(!map||typeof map.getStyle!=='function')return;
+  const style=map.getStyle();if(!style?.layers?.length)return;
   const hideLabels=!!config?.baseMap?.hideLabels,hideWater=!!config?.baseMap?.hideWater;
-  for(const layer of map.getStyle().layers||[]){
-   const sourceLayer=(layer['source-layer']||'').toLowerCase();
-   const layerId=(layer.id||'').toLowerCase();
-   const isWater=['water_lines','water_polygons','water_label'].includes(sourceLayer)||
-     /(^|[_-])(water|waterway|river|canal|stream)([_-]|$)/.test(layerId);
+  for(const layer of style.layers){
+   const sourceLayer=String(layer['source-layer']||'').toLowerCase();
+   const layerId=String(layer.id||'').toLowerCase();
+   const isWater=sourceLayer==='water_lines'||sourceLayer==='water_polygons'||sourceLayer==='water_label'||
+     /water|waterway|river|canal|stream|hydrograph/.test(layerId);
    const hide=(hideLabels&&layer.type==='symbol')||(hideWater&&isWater);
-   try{
-    const current=map.getLayoutProperty(layer.id,'visibility')||'visible';
-    const wanted=hide?'none':'visible';
-    if(current!==wanted)map.setLayoutProperty(layer.id,'visibility',wanted);
-   }catch(e){}
+   if(!hide)continue;
+   try{map.setLayoutProperty(layer.id,'visibility','none');}catch(e){}
   }
  }
  function normalized(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('cs').replace(/[^a-z0-9]/g,'');}
@@ -462,7 +460,10 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
       map.addSource('river-temp-line',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-fill-layer',type:'fill',source:'river-temp-line',filter:['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]],paint:{'fill-color':['get','color'],'fill-opacity':0.18}});
       map.addLayer({id:'river-temp-line-layer',type:'line',source:'river-temp-line',filter:['in',['geometry-type'],['literal',['LineString','MultiLineString','Polygon','MultiPolygon']]],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':['interpolate',['linear'],['zoom'],5,1.5,8,2.1,12,2.8],'line-opacity':1}});
       map.addSource('river-temp-label',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'river-temp-label-layer',type:'symbol',source:'river-temp-label',layout:{'text-field':['get','name'],'text-font':['Open Sans Bold','Arial Unicode MS Bold'],'text-size':14,'text-offset':[0,0.8],'text-anchor':'top','text-allow-overlap':true,'text-ignore-placement':true},paint:{'text-color':['get','color'],'text-halo-color':'#ffffff','text-halo-width':2,'text-halo-blur':0.5}});
-      applyBaseMapSettings(exercise);await initializeExerciseLayer(exercise);
+      applyBaseMapSettings(exercise);
+      // SmartMaps GL wrapper may emit its first style event before all style layers are available.
+      [250,800,1800].forEach(delay=>setTimeout(()=>applyBaseMapSettings(exercise),delay));
+      await initializeExerciseLayer(exercise);
       map.on('click',e=>{const name=nearestNameAtPixel(e.point,40);if(name){onRiver(name);return;}$('feedback').textContent='Klikni na plochu položky nebo blízko její linie.';});
      }catch(e){setStatus('Chyba mapových dat: '+e.message);$('feedback').textContent='Nepodařilo se načíst mapová data: '+e.message;}
     });map.on('error',e=>{if(e?.error)setStatus('Chyba mapy: '+e.error.message)});
