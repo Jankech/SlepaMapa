@@ -177,16 +177,6 @@
     },
     {
       "number": 42,
-      "name": "Lipno",
-      "aliases": [
-        "Lipno I",
-        "Lipno II",
-        "Vodní nádrž Lipno",
-        "vodni nadrz Lipno"
-      ]
-    },
-    {
-      "number": 43,
       "name": "Slapy",
       "aliases": [
         "Vodní nádrž Slapy",
@@ -194,21 +184,12 @@
       ]
     },
     {
-      "number": 44,
+      "number": 43,
       "name": "Orlík",
       "aliases": [
         "Orlik",
         "Vodní nádrž Orlík",
         "vodni nadrz Orlik"
-      ]
-    },
-    {
-      "number": 45,
-      "name": "Seč",
-      "aliases": [
-        "Sec",
-        "Vodní nádrž Seč",
-        "vodni nadrz Sec"
       ]
     }
   ],
@@ -228,7 +209,7 @@
       "nameField": "NAZEV",
       "idField": "OBJECTID",
       "params": {
-        "where": "(NAZEV LIKE '%Černé jezero%' OR NAZEV_ASCII LIKE '%Cerne jezero%' OR NAZEV LIKE '%Lipno%' OR NAZEV_ASCII LIKE '%Lipno%' OR NAZEV LIKE '%Slapy%' OR NAZEV_ASCII LIKE '%Slapy%' OR NAZEV LIKE '%Orlík%' OR NAZEV_ASCII LIKE '%Orlik%' OR NAZEV LIKE '%Seč%' OR NAZEV_ASCII LIKE '%Sec%' OR NAZEV LIKE '%Sečská%')",
+        "where": "(NAZEV LIKE '%Černé jezero%' OR NAZEV_ASCII LIKE '%Cerne jezero%' OR NAZEV LIKE '%Slapy%' OR NAZEV_ASCII LIKE '%Slapy%' OR NAZEV LIKE '%Orlík%' OR NAZEV_ASCII LIKE '%Orlik%')",
         "outFields": "OBJECTID,NAZEV,NAZEV_ASCII,TYP"
       }
     }
