@@ -1,0 +1,21 @@
+{
+  "id": "czech-rivers",
+  "appTitle": "Slepá mapa ČR – řeky",
+  "subtitle": "Procvič si 30 řek podle pracovního listu (č. 11–40).",
+  "description": "30 českých řek – pojmenování na slepé mapě.",
+  "region": "Česká republika",
+  "itemCount": 30,
+  "mapBounds": [[12.0, 48.4], [18.9, 51.2]],
+  "dataSource": {
+    "url": "https://agrigis.gov.cz/public/rest/services/ISVS_Voda/osy_vodnich_linii/FeatureServer/0/query",
+    "nameField": "NAZ_TOK",
+    "idField": "TOK_ID",
+    "params": {
+      "where": "TYP_CEVT = 1 AND (NAZ_TOK LIKE '%Vltava%' OR NAZ_TOK LIKE '%Labe%' OR NAZ_TOK LIKE '%Morava%' OR NAZ_TOK LIKE '%Ohře%' OR NAZ_TOK LIKE '%Sázava%' OR NAZ_TOK LIKE '%Dyje%' OR NAZ_TOK LIKE '%Jihlava%' OR NAZ_TOK LIKE '%Svratka%' OR NAZ_TOK LIKE '%Jizera%' OR NAZ_TOK LIKE '%Lužnice%' OR NAZ_TOK LIKE '%Berounka%' OR NAZ_TOK LIKE '%Odra%' OR NAZ_TOK LIKE '%Otava%' OR NAZ_TOK LIKE '%Opava%' OR NAZ_TOK LIKE '%Radbuza%' OR NAZ_TOK LIKE '%Chrudimka%' OR NAZ_TOK LIKE '%Úhlava%' OR NAZ_TOK LIKE '%Želivka%' OR NAZ_TOK LIKE '%Mže%' OR NAZ_TOK LIKE '%Tichá Orlice%' OR NAZ_TOK LIKE '%Střela%' OR NAZ_TOK LIKE '%Ploučnice%' OR NAZ_TOK LIKE '%Moravice%' OR NAZ_TOK LIKE '%Oslava%' OR NAZ_TOK LIKE '%Svitava%' OR NAZ_TOK LIKE '%Úslava%' OR NAZ_TOK LIKE '%Divoká Orlice%' OR NAZ_TOK LIKE '%Blanice%' OR NAZ_TOK LIKE '%Malše%' OR NAZ_TOK LIKE '%Doubrava%')",
+      "outFields": "NAZ_TOK,TOK_ID,TYP_CEVT"
+    }
+  },
+  "items": [
+    {"number":11,"name":"Vltava"},{"number":12,"name":"Labe"},{"number":13,"name":"Morava"},{"number":14,"name":"Ohře"},{"number":15,"name":"Sázava"},{"number":16,"name":"Dyje"},{"number":17,"name":"Jihlava"},{"number":18,"name":"Svratka"},{"number":19,"name":"Jizera"},{"number":20,"name":"Lužnice"},{"number":21,"name":"Berounka"},{"number":22,"name":"Odra"},{"number":23,"name":"Otava"},{"number":24,"name":"Opava"},{"number":25,"name":"Radbuza"},{"number":26,"name":"Chrudimka"},{"number":27,"name":"Úhlava"},{"number":28,"name":"Želivka"},{"number":29,"name":"Mže"},{"number":30,"name":"Tichá Orlice"},{"number":31,"name":"Střela"},{"number":32,"name":"Ploučnice"},{"number":33,"name":"Moravice"},{"number":34,"name":"Oslava"},{"number":35,"name":"Svitava"},{"number":36,"name":"Úslava"},{"number":37,"name":"Divoká Orlice"},{"number":38,"name":"Blanice"},{"number":39,"name":"Malše"},{"number":40,"name":"Doubrava"}
+  ]
+}
