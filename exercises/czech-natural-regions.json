@@ -232,5 +232,10 @@
     "mountains": "Pohoří a vrchoviny",
     "water": "Jezera a vodní nádrže",
     "lowlands": "Nížiny"
+  },
+  "baseColors": {
+    "mountains": "#c8dfbd",
+    "water": "#f1c0c0",
+    "lowlands": "#e3edb5"
   }
 }
