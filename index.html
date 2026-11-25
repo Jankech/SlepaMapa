@@ -311,9 +311,15 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
    const params=new URLSearchParams({...query.params,f:'geojson',outSR:'4326',returnGeometry:'true'});
    const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),45000);
    let data;
-   try{const response=await fetch(query.url+'?'+params.toString(),{signal:controller.signal,mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status+' – '+query.url);data=await response.json();}
-   finally{clearTimeout(timer);}
-   if(data.error)throw new Error(data.error.message||'Chyba datové služby.');
+   try{
+    const response=await fetch(query.url+'?'+params.toString(),{signal:controller.signal,mode:'cors'});
+    if(!response.ok)throw new Error('HTTP '+response.status+' – '+query.url);
+    data=await response.json();
+    if(data.error)throw new Error(data.error.message||'Chyba datové služby.');
+   }catch(error){
+    console.warn('Datový zdroj není dostupný, použiji dostupné náhradní geometrie:',query.url,error);
+    continue;
+   }finally{clearTimeout(timer);}
    for(const feature of data.features||[]){
     const rawName=feature.properties?.[query.nameField];if(!feature.geometry||!rawName)continue;
     const sourceNames=[rawName,feature.properties?.NAZEV_ASCII].filter(Boolean);
