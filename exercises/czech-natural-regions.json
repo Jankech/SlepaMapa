@@ -1,0 +1,319 @@
+{
+  "id": "czech-natural-regions",
+  "appTitle": "Slepá mapa ČR – přírodní oblasti",
+  "subtitle": "Pohoří, vodní plochy a nížiny České republiky.",
+  "description": "28 přírodních oblastí rozdělených do tří skupin.",
+  "region": "Česká republika",
+  "itemCount": 28,
+  "geometryType": "polygon",
+  "mapBounds": [
+    [
+      12,
+      48.4
+    ],
+    [
+      18.9,
+      51.2
+    ]
+  ],
+  "previewColors": {
+    "mountains": "#8b5a2b",
+    "water": "#168bd2",
+    "lowlands": "#e0b323"
+  },
+  "baseMap": {
+    "hideLabels": true,
+    "hideWater": true
+  },
+  "dataSources": [
+    {
+      "url": "https://ags.cuzk.gov.cz/arcgis/rest/services/GeomorfologickeJednotky/MapServer/39/query",
+      "nameField": "CELEK_P",
+      "idField": "OBJECTID",
+      "codeField": "CELEK_K",
+      "params": {
+        "where": "CELEK_P IN ('Krkonoše','Hrubý Jeseník','Králický Sněžník','Šumava','Moravskoslezské Beskydy','Krušné hory','Rychlebské hory','Jizerské hory','Orlické hory','Novohradské hory','Šumavské podhůří','Český les','Hostýnsko-vsetínská hornatina','Javorníky','Ještědsko-kozákovský hřbet','Hanušovická vrchovina','Středolabská tabule','Hornomoravský úval','Dolnomoravský úval','Dyjskosvratecký úval','Ostravská pánev')",
+        "outFields": "OBJECTID,CELEK_K,CELEK_P"
+      }
+    },
+    {
+      "url": "https://mapy.geology.cz/arcgis/rest/services/Topografie/ZABAGED_komplet/MapServer/12/query",
+      "nameField": "NAZEV",
+      "idField": "OBJECTID",
+      "params": {
+        "where": "(NAZEV LIKE '%Černé jezero%' OR NAZEV_ASCII LIKE '%Cerne jezero%' OR NAZEV LIKE '%Lipno%' OR NAZEV_ASCII LIKE '%Lipno%' OR NAZEV LIKE '%Slapy%' OR NAZEV_ASCII LIKE '%Slapy%' OR NAZEV LIKE '%Orlík%' OR NAZEV_ASCII LIKE '%Orlik%' OR NAZEV LIKE '%Seč%' OR NAZEV_ASCII LIKE '%Sec%' OR NAZEV LIKE '%Švihov%' OR NAZEV_ASCII LIKE '%Svihov%' OR NAZEV LIKE '%Nové Mlýny%' OR NAZEV_ASCII LIKE '%Nove Mlyny%')",
+        "outFields": "OBJECTID,NAZEV,NAZEV_ASCII,TYP"
+      }
+    }
+  ],
+  "items": [
+    {
+      "number": "1",
+      "name": "Krkonoše",
+      "category": "mountains"
+    },
+    {
+      "number": "2",
+      "name": "Hrubý Jeseník",
+      "category": "mountains"
+    },
+    {
+      "number": "3",
+      "name": "Králický Sněžník",
+      "category": "mountains"
+    },
+    {
+      "number": "4",
+      "name": "Šumava",
+      "category": "mountains"
+    },
+    {
+      "number": "5",
+      "name": "Moravskoslezské Beskydy",
+      "category": "mountains"
+    },
+    {
+      "number": "6",
+      "name": "Krušné hory",
+      "category": "mountains"
+    },
+    {
+      "number": "7",
+      "name": "Rychlebské hory",
+      "category": "mountains"
+    },
+    {
+      "number": "8",
+      "name": "Jizerské hory",
+      "category": "mountains"
+    },
+    {
+      "number": "9",
+      "name": "Orlické hory",
+      "category": "mountains"
+    },
+    {
+      "number": "10",
+      "name": "Novohradské hory",
+      "category": "mountains"
+    },
+    {
+      "number": "11",
+      "name": "Šumavské podhůří",
+      "category": "mountains"
+    },
+    {
+      "number": "12",
+      "name": "Český les",
+      "category": "mountains"
+    },
+    {
+      "number": "13",
+      "name": "Hostýnsko-vsetínská hornatina",
+      "category": "mountains"
+    },
+    {
+      "number": "14",
+      "name": "Javorníky",
+      "category": "mountains"
+    },
+    {
+      "number": "15",
+      "name": "Ještědsko-kozákovský hřbet",
+      "category": "mountains"
+    },
+    {
+      "number": "16",
+      "name": "Hanušovická vrchovina",
+      "category": "mountains"
+    },
+    {
+      "number": "17",
+      "name": "Černé jezero",
+      "category": "water",
+      "aliases": [
+        "Černé jezero",
+        "Cerne jezero"
+      ]
+    },
+    {
+      "number": "18",
+      "name": "Lipno",
+      "category": "water",
+      "aliases": [
+        "Lipno",
+        "Vodní nádrž Lipno",
+        "Nádrž Lipno"
+      ],
+      "fallbackGeometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              14.02,
+              48.78
+            ],
+            [
+              14.07,
+              48.8
+            ],
+            [
+              14.13,
+              48.79
+            ],
+            [
+              14.19,
+              48.76
+            ],
+            [
+              14.2,
+              48.73
+            ],
+            [
+              14.16,
+              48.71
+            ],
+            [
+              14.11,
+              48.72
+            ],
+            [
+              14.06,
+              48.74
+            ],
+            [
+              14.02,
+              48.78
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "number": "19",
+      "name": "Slapy",
+      "category": "water",
+      "aliases": [
+        "Slapy",
+        "Vodní nádrž Slapy",
+        "Nádrž Slapy"
+      ]
+    },
+    {
+      "number": "20",
+      "name": "Orlík",
+      "category": "water",
+      "aliases": [
+        "Orlík",
+        "Orlik",
+        "Vodní nádrž Orlík",
+        "Nádrž Orlík"
+      ]
+    },
+    {
+      "number": "21",
+      "name": "Seč",
+      "category": "water",
+      "aliases": [
+        "Seč",
+        "Sec",
+        "Vodní nádrž Seč",
+        "Nádrž Seč"
+      ],
+      "fallbackGeometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              15.6,
+              49.84
+            ],
+            [
+              15.63,
+              49.86
+            ],
+            [
+              15.67,
+              49.86
+            ],
+            [
+              15.7,
+              49.84
+            ],
+            [
+              15.68,
+              49.82
+            ],
+            [
+              15.64,
+              49.82
+            ],
+            [
+              15.6,
+              49.84
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "number": "22",
+      "name": "Švihov",
+      "category": "water",
+      "aliases": [
+        "Švihov",
+        "Svihov",
+        "Vodní nádrž Švihov",
+        "Želivka"
+      ]
+    },
+    {
+      "number": "23",
+      "name": "Nové Mlýny",
+      "category": "water",
+      "aliases": [
+        "Nové Mlýny",
+        "Nove Mlyny",
+        "Novomlýnské nádrže"
+      ]
+    },
+    {
+      "number": "24",
+      "name": "Polabská nížina",
+      "category": "lowlands",
+      "aliases": [
+        "Středolabská tabule"
+      ]
+    },
+    {
+      "number": "25",
+      "name": "Hornomoravský úval",
+      "category": "lowlands"
+    },
+    {
+      "number": "26",
+      "name": "Dolnomoravský úval",
+      "category": "lowlands"
+    },
+    {
+      "number": "27",
+      "name": "Dyjskosvratecký úval",
+      "category": "lowlands"
+    },
+    {
+      "number": "28",
+      "name": "Ostravská pánev",
+      "category": "lowlands"
+    }
+  ],
+  "categoryLabels": {
+    "mountains": "Pohoří a vrchoviny",
+    "water": "Jezera a vodní nádrže",
+    "lowlands": "Nížiny"
+  },
+  "baseColors": {
+    "mountains": "#c8dfbd",
+    "water": "#f1c0c0",
+    "lowlands": "#e3edb5"
+  }
+}

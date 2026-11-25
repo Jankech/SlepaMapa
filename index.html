@@ -16,6 +16,7 @@ button{cursor:pointer;font-weight:650;background:#174d70;color:#fff;border:0;mar
 #answerArea{margin-top:10px}#answerRow{display:flex;gap:7px}#answerRow input{min-width:0}#answerRow button{width:auto;white-space:nowrap;margin:0}
 #dragCard{padding:8px 10px;border:1px solid #a8bfd0;border-radius:9px;background:#edf5fa;color:#173b57;font-weight:700;text-align:center;cursor:grab;user-select:none}#dragList{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:240px;overflow:auto;padding:2px}#dragList .drag-item{padding:7px 8px;border:1px solid #a8bfd0;border-radius:8px;background:#f0f7fb;color:#173b57;font-size:12px;font-weight:700;cursor:grab;text-align:center;user-select:none}#dragList .drag-item:active{cursor:grabbing}#mapLegend{display:flex;align-items:center;gap:7px;font-size:12px;color:#526170;margin-top:8px}#mapLegend i{display:inline-block;width:27px;height:9px;border-radius:9px;background:#8bd3ee;border:2px solid #1684c7}
 #riverList{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+ .river-group-heading{grid-column:1/-1;padding:8px 4px 2px;margin-top:4px;border-bottom:1px solid #dce5ec;font-size:12px;font-weight:800;color:#173b57}
 #riverListPanel{margin-top:12px;border-top:1px solid #e1e7ec;padding-top:9px}
 #riverListPanel summary{cursor:pointer;font-size:13px;font-weight:750;color:#173b57;padding:5px 2px}
 .control-buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -204,8 +205,8 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
   if(activePreview==='all'){cancelPreview();return;}
   if(!fc?.features?.length){$('feedback').textContent='Nejsou načtené žádné položky k zobrazení.';return;}
   clearTimeout(listPreviewTimer);activePreview='all';
-  tempFeatures=fc.features.map(feature=>({...feature,properties:{...feature.properties,color:'#f2c230'}}));
-  tempLabels=fc.features.map(feature=>makeLabel(feature,'#9a6b00')).filter(Boolean);
+  tempFeatures=fc.features.map(feature=>({...feature,properties:{...feature.properties,color:feature.properties.previewColor||'#f2c230'}}));
+  tempLabels=fc.features.map(feature=>makeLabel(feature,feature.properties.previewColor||'#9a6b00')).filter(Boolean);
   updateResultLayers();
   $('fullPreview').textContent='Zrušit plný náhled';
   $('feedback').textContent='Plný náhled: zobrazeno všech '+new Set(fc.features.map(feature=>feature.properties.name)).size+' položek. Kliknutím znovu náhled zrušíš.';
@@ -229,8 +230,8 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
   const matches=(fc?.features||[]).filter(feature=>feature.properties?.name===name);
   if(!matches.length){$('feedback').textContent='Geometrii položky '+name+' se nepodařilo načíst.';return;}
   clearTimeout(listPreviewTimer);activePreview=key;
-  tempFeatures=matches.map(feature=>({...feature,properties:{...feature.properties,color:'#f2c230'}}));
-  tempLabels=matches.map(feature=>makeLabel(feature,'#9a6b00')).filter(Boolean);
+  tempFeatures=matches.map(feature=>({...feature,properties:{...feature.properties,color:feature.properties.previewColor||'#f2c230'}}));
+  tempLabels=matches.map(feature=>makeLabel(feature,feature.properties.previewColor||'#9a6b00')).filter(Boolean);
   updateResultLayers();panPreviewIntoVisibleArea(matches);
   $('feedback').textContent='Náhled: '+name+' (5 sekund). Kliknutím znovu náhled zrušíš.';
   listPreviewTimer=setTimeout(()=>{clearTemporary();activePreview=null;listPreviewTimer=null;},5000);
@@ -238,15 +239,25 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
  function renderRiverList(){
   $('riverList').innerHTML='';
   $('completedCount').textContent=score+'/'+rivers.length;
-  rivers.forEach(([num,name])=>{
-   const item=document.createElement('button');
-   const state=riverState[name]||'';
-   item.type='button';item.className='river-item'+(state==='done'?' done':'');
-   item.style.cursor='pointer';item.style.textAlign='left';item.title='Zobrazit náhled na mapě na 5 sekund';
-   item.innerHTML='<span class="num">'+num+'</span><span></span>';
-   item.lastElementChild.textContent=name+(state==='done'?' ✓':'');
-   item.addEventListener('click',()=>previewListItem(name));
-   $('riverList').appendChild(item);
+  const grouped=exercise?.items?.some(item=>item.category);
+  const groups=grouped?[...new Set(exercise.items.map(item=>item.category))].map(category=>({category,items:exercise.items.filter(item=>item.category===category)})):[{category:null,items:exercise?.items||[]}];
+  groups.forEach(group=>{
+   if(group.category){
+    const heading=document.createElement('div');heading.className='river-group-heading';
+    heading.textContent=exercise.categoryLabels?.[group.category]||group.category;
+    $('riverList').appendChild(heading);
+   }
+   group.items.forEach(entry=>{
+    const [num,name]=[entry.number??'',entry.name];
+    const item=document.createElement('button');
+    const state=riverState[name]||'';
+    item.type='button';item.className='river-item'+(state==='done'?' done':'');
+    item.style.cursor='pointer';item.style.textAlign='left';item.title='Zobrazit náhled na mapě na 5 sekund';
+    item.innerHTML='<span class="num">'+num+'</span><span></span>';
+    item.lastElementChild.textContent=name+(state==='done'?' ✓':'');
+    item.addEventListener('click',()=>previewListItem(name));
+    $('riverList').appendChild(item);
+   });
   });
  }
  async function loadRegistry(){
@@ -308,7 +319,12 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
     const sourceNames=[rawName,feature.properties?.NAZEV_ASCII].filter(Boolean);
     const rawCode=query.codeField?String(feature.properties?.[query.codeField]??'').trim():'';
     const item=config.items.find(entry=>(entry.code&&rawCode&&String(entry.code).trim()===rawCode)||([entry.name,...(entry.aliases||[])].some(alias=>sourceNames.some(sourceName=>normalized(alias)===normalized(sourceName)))&&featureMatchesBounds(feature,entry.matchBounds)));
-    if(item)features.push({type:'Feature',properties:{name:item.name,item_id:feature.properties[query.idField]??feature.properties.OBJECTID,item_type:config.geometryType==='polygon'?'region':(sourceIndex===0?'river':'waterbody')},geometry:feature.geometry});
+    if(item)features.push({type:'Feature',properties:{name:item.name,category:item.category||null,previewColor:config.previewColors?.[item.category]||null,item_id:feature.properties[query.idField]??feature.properties.OBJECTID,item_type:config.geometryType==='polygon'?'region':(sourceIndex===0?'river':'waterbody')},geometry:feature.geometry});
+   }
+  }
+  for(const item of config.items){
+   if(item.fallbackGeometry&&!features.some(feature=>feature.properties.name===item.name)){
+    features.push({type:'Feature',properties:{name:item.name,category:item.category||null,previewColor:config.previewColors?.[item.category]||null,item_id:'approximate',item_type:config.geometryType==='polygon'?'region':'waterbody',approximate:true},geometry:item.fallbackGeometry});
    }
   }
   if(!features.length)throw new Error('Datové zdroje nevrátily žádnou položku cvičení. Zkontroluj názvy v datech.');
@@ -319,7 +335,7 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
   if(map.getLayer('rivers-fill')){
    map.setLayoutProperty('rivers-fill','visibility',polygon?'visible':'none');
    map.setFilter('rivers-fill',['all',['==',['get','item_type'],'region'],['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]]]);
-   map.setPaintProperty('rivers-fill','fill-color','#8bd3ee');
+   map.setPaintProperty('rivers-fill','fill-color',config.baseColors?['match',['get','category'],'mountains',config.baseColors.mountains||'#c8dfbd','water',config.baseColors.water||'#f1c0c0','lowlands',config.baseColors.lowlands||'#e3edb5','#8bd3ee']:'#8bd3ee');
    map.setPaintProperty('rivers-fill','fill-opacity',polygon?0.24:0);
   }
   if(map.getLayer('rivers-corridor')){
