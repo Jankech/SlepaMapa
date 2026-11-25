@@ -322,6 +322,11 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
     if(item)features.push({type:'Feature',properties:{name:item.name,category:item.category||null,previewColor:config.previewColors?.[item.category]||null,item_id:feature.properties[query.idField]??feature.properties.OBJECTID,item_type:config.geometryType==='polygon'?'region':(sourceIndex===0?'river':'waterbody')},geometry:feature.geometry});
    }
   }
+  for(const item of config.items){
+   if(item.fallbackGeometry&&!features.some(feature=>feature.properties.name===item.name)){
+    features.push({type:'Feature',properties:{name:item.name,category:item.category||null,previewColor:config.previewColors?.[item.category]||null,item_id:'approximate',item_type:config.geometryType==='polygon'?'region':'waterbody',approximate:true},geometry:item.fallbackGeometry});
+   }
+  }
   if(!features.length)throw new Error('Datové zdroje nevrátily žádnou položku cvičení. Zkontroluj názvy v datech.');
   fc={type:'FeatureCollection',features};
   map.getSource('rivers').setData(fc);
