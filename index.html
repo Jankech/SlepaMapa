@@ -340,9 +340,9 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
   const line=config.geometryType!=='polygon';
   if(map.getLayer('rivers-fill')){
    map.setLayoutProperty('rivers-fill','visibility',polygon?'visible':'none');
-   map.setFilter('rivers-fill',['all',['==',['get','item_type'],'region'],['any',['==',['geometry-type'],'Polygon'],['==',['geometry-type'],'MultiPolygon']]]);
+   map.setFilter('rivers-fill',['==',['get','item_type'],'region']);
    map.setPaintProperty('rivers-fill','fill-color',config.baseColors?['match',['get','category'],'mountains',config.baseColors.mountains||'#c8dfbd','water',config.baseColors.water||'#f1c0c0','lowlands',config.baseColors.lowlands||'#e3edb5','#8bd3ee']:'#8bd3ee');
-   map.setPaintProperty('rivers-fill','fill-opacity',polygon?0.24:0);
+   map.setPaintProperty('rivers-fill','fill-opacity',polygon?0.55:0);
   }
   if(map.getLayer('rivers-corridor')){
    map.setLayoutProperty('rivers-corridor','visibility',line?'visible':'none');
@@ -350,15 +350,15 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
   }
   if(map.getLayer('rivers-line')){
    map.setLayoutProperty('rivers-line','visibility',polygon?'none':'visible');
-   map.setFilter('rivers-line',['any',['all',['==',['get','item_type'],'river'],['in',['geometry-type'],['literal',['LineString','MultiLineString']]]],['all',['==',['get','item_type'],'waterbody'],['any',['==',['geometry-type'],'Polygon'],['==',['geometry-type'],'MultiPolygon']]],['all',['==',['get','item_type'],'region'],['any',['==',['geometry-type'],'Polygon'],['==',['geometry-type'],'MultiPolygon']]]]);
+   map.setFilter('rivers-line',['any',['all',['==',['get','item_type'],'river'],['in',['geometry-type'],['literal',['LineString','MultiLineString']]]],['all',['==',['get','item_type'],'waterbody'],['any',['==',['geometry-type'],'Polygon'],['==',['geometry-type'],'MultiPolygon']]],['==',['get','item_type'],'region']]);
   }
-  const polygonFilter=['all',['==',['get','item_type'],'region'],['any',['==',['geometry-type'],'Polygon'],['==',['geometry-type'],'MultiPolygon']]];
+  const polygonFilter=['==',['get','item_type'],'region'];
   const lineFilter=['any',['all',['==',['get','item_type'],'river'],['in',['geometry-type'],['literal',['LineString','MultiLineString']]]],['all',['==',['get','item_type'],'waterbody'],['any',['==',['geometry-type'],'Polygon'],['==',['geometry-type'],'MultiPolygon']]]];
   map.setFilter('river-result-fill',polygon?polygonFilter:['==',['get','item_type'],'__disabled__']);
-  map.setPaintProperty('river-result-fill','fill-opacity',polygon?0.32:0);
+  map.setPaintProperty('river-result-fill','fill-opacity',polygon?0.65:0);
   map.setFilter('river-result-line',polygon?polygonFilter:lineFilter);
   map.setFilter('river-temp-fill-layer',polygon?polygonFilter:['==',['get','item_type'],'__disabled__']);
-  map.setPaintProperty('river-temp-fill-layer','fill-opacity',polygon?0.18:0);
+  map.setPaintProperty('river-temp-fill-layer','fill-opacity',polygon?0.5:0);
   map.setFilter('river-temp-line-layer',polygon?polygonFilter:lineFilter);
   ['river-result-lines','river-result-labels','river-temp-line','river-temp-label'].forEach(id=>map.getSource(id)?.setData({type:'FeatureCollection',features:[]}));
   setStatus('Načteno '+new Set(features.map(f=>f.properties.name)).size+' z '+rivers.length+' položek.');
