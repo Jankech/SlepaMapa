@@ -330,7 +330,7 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
   if(map.getLayer('rivers-fill')){
    map.setLayoutProperty('rivers-fill','visibility',polygon?'visible':'none');
    map.setFilter('rivers-fill',['all',['==',['get','item_type'],'region'],['in',['geometry-type'],['literal',['Polygon','MultiPolygon']]]]);
-   map.setPaintProperty('rivers-fill','fill-color',config.previewColors?['match',['get','category'],'mountains',config.previewColors.mountains||'#8b5a2b','water',config.previewColors.water||'#168bd2','lowlands',config.previewColors.lowlands||'#e0b323','#8bd3ee']:'#8bd3ee');
+   map.setPaintProperty('rivers-fill','fill-color',config.baseColors?['match',['get','category'],'mountains',config.baseColors.mountains||'#c8dfbd','water',config.baseColors.water||'#f1c0c0','lowlands',config.baseColors.lowlands||'#e3edb5','#8bd3ee']:'#8bd3ee');
    map.setPaintProperty('rivers-fill','fill-opacity',polygon?0.24:0);
   }
   if(map.getLayer('rivers-corridor')){
