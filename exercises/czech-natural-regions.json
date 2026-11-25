@@ -130,37 +130,74 @@
     {
       "number": "17",
       "name": "Černé jezero",
-      "category": "water"
+      "category": "water",
+      "aliases": [
+        "Černé jezero",
+        "Cerne jezero"
+      ]
     },
     {
       "number": "18",
       "name": "Lipno",
-      "category": "water"
+      "category": "water",
+      "aliases": [
+        "Lipno",
+        "Vodní nádrž Lipno",
+        "Nádrž Lipno"
+      ]
     },
     {
       "number": "19",
       "name": "Slapy",
-      "category": "water"
+      "category": "water",
+      "aliases": [
+        "Slapy",
+        "Vodní nádrž Slapy",
+        "Nádrž Slapy"
+      ]
     },
     {
       "number": "20",
       "name": "Orlík",
-      "category": "water"
+      "category": "water",
+      "aliases": [
+        "Orlík",
+        "Orlik",
+        "Vodní nádrž Orlík",
+        "Nádrž Orlík"
+      ]
     },
     {
       "number": "21",
       "name": "Seč",
-      "category": "water"
+      "category": "water",
+      "aliases": [
+        "Seč",
+        "Sec",
+        "Vodní nádrž Seč",
+        "Nádrž Seč"
+      ]
     },
     {
       "number": "22",
       "name": "Švihov",
-      "category": "water"
+      "category": "water",
+      "aliases": [
+        "Švihov",
+        "Svihov",
+        "Vodní nádrž Švihov",
+        "Želivka"
+      ]
     },
     {
       "number": "23",
       "name": "Nové Mlýny",
-      "category": "water"
+      "category": "water",
+      "aliases": [
+        "Nové Mlýny",
+        "Nove Mlyny",
+        "Novomlýnské nádrže"
+      ]
     },
     {
       "number": "24",
@@ -190,5 +227,10 @@
       "name": "Ostravská pánev",
       "category": "lowlands"
     }
-  ]
+  ],
+  "categoryLabels": {
+    "mountains": "Pohoří a vrchoviny",
+    "water": "Jezera a vodní nádrže",
+    "lowlands": "Nížiny"
+  }
 }
