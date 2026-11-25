@@ -13,6 +13,13 @@
       "description": "14 krajů České republiky – procvičování na slepé mapě.",
       "region": "Česká republika",
       "itemCount": 14
+    },
+    {
+      "title": "Česká republika – přírodní oblasti",
+      "file": "czech-natural-regions.json",
+      "description": "28 pohoří, vodních ploch a nížin rozdělených do skupin.",
+      "region": "Česká republika",
+      "itemCount": 28
     }
   ]
 }
