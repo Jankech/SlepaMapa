@@ -519,21 +519,32 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
  // Pixel-based hit testing: generous tolerance, independent of thin rendered map strokes.
  function nearestNameAtPixel(point,tolerance=36){
   if(!fc||!map)return null;
-  let best=null,bestDistance=Infinity;
+  let bestPolygon=null,bestArea=Infinity,bestLine=null,bestDistance=Infinity;
+  const ringContains=(ring)=>{
+   let inside=false;
+   for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+    const a=ring[i],b=ring[j];
+    if(((a.y>point.y)!==(b.y>point.y))&&(point.x<(b.x-a.x)*(point.y-a.y)/(b.y-a.y)+a.x))inside=!inside;
+   }
+   return inside;
+  };
+  const ringArea=ring=>{
+   let area=0;
+   for(let i=0,j=ring.length-1;i<ring.length;j=i++)area+=ring[j].x*ring[i].y-ring[i].x*ring[j].y;
+   return Math.abs(area/2);
+  };
   for(const f of fc.features){
    if(f.geometry.type==='Polygon'||f.geometry.type==='MultiPolygon'){
     const polygons=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;
-    let inside=false;
     for(const polygon of polygons){
-     const ring=polygon[0].map(c=>map.project(c));
-     let hit=false;
-     for(let i=0,j=ring.length-1;i<ring.length;j=i++){
-      const a=ring[i],b=ring[j];
-      if(((a.y>point.y)!==(b.y>point.y))&&(point.x<(b.x-a.x)*(point.y-a.y)/(b.y-a.y)+a.x))hit=!hit;
-     }
-     if(hit){inside=true;break;}
+     if(!polygon?.[0]?.length)continue;
+     const outer=polygon[0].map(c=>map.project(c));
+     if(!ringContains(outer))continue;
+     const inHole=polygon.slice(1).some(hole=>ringContains(hole.map(c=>map.project(c))));
+     if(inHole)continue;
+     const area=ringArea(outer);
+     if(area<bestArea){bestArea=area;bestPolygon=f.properties.name;}
     }
-    if(inside)return f.properties.name;
     continue;
    }
    const lines=f.geometry.type==='MultiLineString'?f.geometry.coordinates:[f.geometry.coordinates];
@@ -547,13 +558,13 @@ body.identify-keyboard #feedback{margin-top:5px;min-height:0}
       const t=Math.max(0,Math.min(1,((point.x-prev.x)*dx+(point.y-prev.y)*dy)/(dx*dx+dy*dy||1)));
       const px=prev.x+t*dx,py=prev.y+t*dy;
       const d=Math.hypot(point.x-px,point.y-py);
-      if(d<bestDistance){bestDistance=d;best=f.properties.name;}
+      if(d<bestDistance){bestDistance=d;bestLine=f.properties.name;}
      }
      prev=cur;
     }
    }
   }
-  return bestDistance<=tolerance?best:null;
+  return bestPolygon|| (bestDistance<=tolerance?bestLine:null);
  }
  $('adminClose').addEventListener('click',()=>{$('adminPanel').hidden=true;});
  $('next').addEventListener('click',()=>{if(mode==='identify'){selectedOnMap=null;hintLevel=0;clearTemporary();renderTask();$('feedback').textContent='Výběr zrušen. Klikni na další položku.';}else randomTarget();});
